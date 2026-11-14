@@ -21,7 +21,7 @@ export interface NovelRepository {
   reset(): Promise<void>
 }
 
-export const DEFAULT_SETTINGS: ReaderSettings = { theme: 'light', fontSize: 18 }
+export const DEFAULT_SETTINGS: ReaderSettings = { theme: 'dark', fontSize: 18 }
 
 const KEYS = {
   novels: 'np.novels.v1',

@@ -86,6 +86,15 @@ export function AboutPage() {
           작품의 표지를 사용하지 않았고, 그림 파일은{' '}
           <code className="chip">public/images/</code> 아래에 있습니다.
         </p>
+        <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+          지금 들어 있는 그림은 표지 3종과 키 비주얼 3종, 인물 카드 12인, 선택지 장면 16컷, 회차
+          본문에 끼워 넣는 삽화 9컷입니다. 본문 삽화는 줄거리의 결정적인 장면에서 한 번씩 크게
+          펼쳐지고, 작품 페이지의 <b>명장면 일러스트 갤러리</b>에서 모아 볼 수 있습니다.
+        </p>
+        <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+          읽기 화면은 라이트·세피아·다크 세 가지 배경을 제공하고, 플랫폼 기본 화면은 어두운
+          플럼·옵시디언 바탕에 로즈·인디고 포인트를 쓰는 다크 테마로 시작합니다.
+        </p>
       </section>
 
       <section className="card p-5 mt-4">

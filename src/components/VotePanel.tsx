@@ -135,14 +135,14 @@ export function VotePanel({ novel, episode }: Props) {
               <Link
                 key={choice.id}
                 to={`/novel/${novel.id}/ep/${next}`}
-                className="flex items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-[12.5px] font-semibold transition-colors"
+                className="flex min-w-0 items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-[12.5px] font-semibold transition-colors"
                 style={{
                   borderColor: isAdopted ? 'var(--accent)' : 'var(--line)',
                   color: isAdopted ? 'var(--accent-strong)' : 'var(--ink-soft)',
                   background: isAdopted ? 'var(--accent-soft)' : 'var(--surface)',
                 }}
               >
-                <span className="truncate">
+                <span className="min-w-0 flex-1 truncate">
                   {isAdopted ? '👑 다수파가 고른 다음 화' : '🌱 이 루트의 다음 화'} · “{choice.label}”
                 </span>
                 <span className="shrink-0">→</span>

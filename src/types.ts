@@ -8,8 +8,10 @@ export interface Character {
   name: string
   /** 작품 속 역할 (예: 마케팅팀 3년차 대리) */
   role: string
-  /** 남주 / 여주 / 조연 */
+  /** 남주 / 여주 / 조연 — 카드 색을 결정합니다 */
   tag: '남주' | '여주' | '조연'
+  /** 카드에 붙는 짧은 역할 배지 (예: 서브남주 · 라이벌 · 조력자). 없으면 tag 사용 */
+  badge?: string
   /** 카드에 한 줄로 노출되는 대사 */
   quote: string
   /** 인물 일러스트 경로 (public 기준) */

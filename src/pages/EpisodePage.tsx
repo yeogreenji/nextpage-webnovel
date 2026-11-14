@@ -9,7 +9,7 @@ import { Countdown } from '../components/Countdown'
 import { ReadingProgress } from '../components/ReadingProgress'
 import { formatDateTime, readingMinutes } from '../lib/format'
 import { copyText } from '../lib/share-card'
-import { imageUrl } from '../data/art'
+import { EPISODE_SCENES, imageUrl, placeScenes } from '../data/art'
 
 export function EpisodePage() {
   const { novelId = '', episodeId = '' } = useParams()
@@ -96,6 +96,8 @@ export function EpisodePage() {
   }
 
   const paragraphs = episode.body.split(/\n{2,}/).filter((line) => line.trim().length > 0)
+  const blocks = placeScenes(episode.id, paragraphs)
+  const sceneCount = EPISODE_SCENES[episode.id]?.length ?? 0
   const minutes = readingMinutes(episode.body)
 
   return (
@@ -167,6 +169,7 @@ export function EpisodePage() {
                   투표 <Countdown closesAt={episode.voteClosesAt} className="text-[11.5px]" />
                 </span>
               )}
+              {sceneCount > 0 && <span>삽화 {sceneCount}컷</span>}
               <button
                 type="button"
                 className="font-semibold underline decoration-dotted underline-offset-4"
@@ -187,9 +190,24 @@ export function EpisodePage() {
       </div>
 
       <article className="chapter-frame reader-body mt-4 px-5 py-8 sm:px-12 sm:py-12">
-        {paragraphs.map((paragraph, index) => (
-          <p key={index}>{paragraph}</p>
-        ))}
+        {blocks.map((block, index) => {
+          if (block.scene) {
+            return (
+              <figure className="inline-scene" key={`scene-${index}`}>
+                <div className="inline-scene-media">
+                  <img
+                    src={imageUrl(block.scene.image)}
+                    alt={block.scene.caption}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+                <figcaption>{block.scene.caption}</figcaption>
+              </figure>
+            )
+          }
+          return <p key={index}>{block.text}</p>
+        })}
         <div className="mt-10 flex items-center justify-center gap-3" aria-hidden>
           <span className="h-px w-10" style={{ background: 'var(--line-strong)' }} />
           <span className="text-[13px]" style={{ color: 'var(--accent)' }}>
@@ -231,7 +249,7 @@ export function EpisodePage() {
               작품 페이지 →
             </Link>
           </div>
-          <CharacterStrip characters={novel.characters} />
+          <CharacterStrip characters={novel.characters} variant="compact" />
         </section>
       )}
 

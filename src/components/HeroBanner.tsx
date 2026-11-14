@@ -17,6 +17,7 @@ export function HeroBanner({ novel, episodes }: Props) {
   const participants = novelParticipants(episodes)
   const art = imageUrl(novel.heroImage ?? novel.coverImage)
   const cover = imageUrl(novel.coverImage)
+  const castCount = novel.characters?.length ?? 0
 
   return (
     <section className="hero rise" aria-label="대표 작품">
@@ -39,15 +40,21 @@ export function HeroBanner({ novel, episodes }: Props) {
         )}
       </div>
       <div className="hero-scrim" />
+      <div className="hero-aurora" aria-hidden />
 
       <div className="hero-copy">
-        <span className="live-badge">
-          <span className="live-dot" aria-hidden />
-          {open ? '실시간 독자 투표 진행 중' : '연재 중인 대표작'}
-        </span>
+        <div className="hero-ribbon">
+          <span className="live-badge">
+            <span className="live-dot" aria-hidden />
+            {open ? '실시간 독자 투표 진행 중' : '연재 중인 대표작'}
+          </span>
+          <span className="pill pill-hot">TOP 1</span>
+          <span className="pill pill-ghost">{novel.genres[0]}</span>
+          {castCount > 0 && <span className="pill pill-ghost hidden sm:inline-flex">등장인물 {castCount}인</span>}
+        </div>
 
         <p className="hero-eyebrow">
-          {novel.genres[0]} · {novel.penName}
+          {novel.genres.join(' · ')} · {novel.penName}
         </p>
         <h1 className="hero-title">{novel.title}</h1>
         <p className="hero-tagline">{novel.tagline}</p>
@@ -65,8 +72,8 @@ export function HeroBanner({ novel, episodes }: Props) {
               작품 보러 가기 →
             </Link>
           )}
-          <Link className="btn btn-glass" to={`/novel/${novel.id}`}>
-            {open ? `${open.no}화 읽고 고르기` : '작품 정보'}
+          <Link className="btn btn-glass" to={`/novel/${novel.id}#characters`}>
+            캐릭터 보기
           </Link>
         </div>
 

@@ -1,16 +1,18 @@
 import { useEffect } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
 import { BranchTree } from '../components/BranchTree'
 import { CharacterStrip } from '../components/CharacterStrip'
+import { SceneGallery } from '../components/SceneGallery'
 import { Countdown } from '../components/Countdown'
 import { formatNumber, formatRelative } from '../lib/format'
 import { novelParticipants, tallyVotes } from '../lib/vote'
-import { imageUrl } from '../data/art'
+import { imageUrl, scenesForEpisodes } from '../data/art'
 import type { Episode } from '../types'
 
 export function NovelPage() {
   const { novelId = '' } = useParams()
+  const location = useLocation()
   const { ready, novels, episodes, votes } = useStore()
   const novel = novels.find((item) => item.id === novelId)
   const episodesOfNovel = episodes.filter((item) => item.novelId === novelId)
@@ -27,6 +29,15 @@ export function NovelPage() {
       document.title = '넥스트페이지 · 선택형 웹소설'
     }
   }, [novel])
+
+  // 캐릭터 스포트라이트에서 넘어온 경우 등장인물 섹션으로
+  useEffect(() => {
+    if (!ready || location.hash !== '#characters') return undefined
+    const timer = window.setTimeout(() => {
+      document.getElementById('characters')?.scrollIntoView({ behavior: 'auto', block: 'start' })
+    }, 160)
+    return () => window.clearTimeout(timer)
+  }, [ready, location.hash, novelId])
 
   if (!ready) {
     return (
@@ -51,6 +62,13 @@ export function NovelPage() {
   const first = published.find((item) => item.id === novel.startEpisodeId) ?? published[0]
   const cover = imageUrl(novel.coverImage)
   const characters = novel.characters ?? []
+  const sceneItems = scenesForEpisodes(episodesOfNovel).map(({ episode, scene }) => ({
+    image: scene.image,
+    caption: scene.caption,
+    episodeNo: episode.no,
+    episodeTitle: episode.title,
+    href: `/novel/${novel.id}/ep/${episode.id}`,
+  }))
 
   return (
     <div className="page-shell pt-6">
@@ -93,9 +111,11 @@ export function NovelPage() {
                 </span>
               ))}
               <span className="pill pill-ghost">{novel.status === 'ongoing' ? '연재 중' : '완결'}</span>
+              {characters.length > 0 && <span className="pill pill-ghost">등장인물 {characters.length}인</span>}
+              {sceneItems.length > 0 && <span className="pill pill-ghost">삽화 {sceneItems.length}컷</span>}
             </div>
 
-            <h1 className="mt-3 text-[22px] sm:text-[32px] font-extrabold tracking-tight leading-snug">
+            <h1 className="mt-3 text-[22px] sm:text-[34px] font-extrabold tracking-tight leading-snug">
               {novel.title}
             </h1>
             <p className="mt-1.5 text-[13px]" style={{ color: 'rgba(255,250,247,0.72)' }}>
@@ -135,45 +155,92 @@ export function NovelPage() {
               <Link to={`/novel/${novel.id}/tree`} className="btn btn-glass">
                 분기 트리
               </Link>
+              {characters.length > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-glass"
+                  onClick={() =>
+                    document
+                      .getElementById('characters')
+                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }
+                >
+                  캐릭터 {characters.length}인
+                </button>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      {/* 시놉시스 + 등장인물 */}
-      <div className="mt-5 grid gap-4 lg:grid-cols-[1.15fr_1.85fr]">
-        <section className="card p-5">
-          <p className="eyebrow">Synopsis</p>
-          <p
-            className="mt-2.5 text-[13.5px] leading-[1.85]"
-            style={{ color: 'var(--ink-soft)', wordBreak: 'keep-all' }}
-          >
-            {novel.synopsis}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-1.5">
-            {novel.genres.map((genre) => (
-              <span key={genre} className="pill pill-genre">
-                #{genre.replace(/\s/g, '')}
-              </span>
-            ))}
-          </div>
-        </section>
-
-        {characters.length > 0 && (
-          <section>
-            <div className="section-head">
-              <div>
-                <p className="eyebrow">Characters</p>
-                <h2 className="text-[17px] font-extrabold mt-1">등장인물</h2>
-              </div>
-              <span className="text-[11.5px]" style={{ color: 'var(--ink-mute)' }}>
-                {characters.length}명
-              </span>
+      {/* 시놉시스 */}
+      <section className="card mt-5 p-5 sm:p-6">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 lg:max-w-[680px]">
+            <p className="eyebrow">Synopsis</p>
+            <p
+              className="mt-2.5 text-[13.5px] leading-[1.9]"
+              style={{ color: 'var(--ink-soft)', wordBreak: 'keep-all' }}
+            >
+              {novel.synopsis}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {novel.genres.map((genre) => (
+                <span key={genre} className="pill pill-genre">
+                  #{genre.replace(/\s/g, '')}
+                </span>
+              ))}
             </div>
-            <CharacterStrip characters={characters} />
-          </section>
-        )}
-      </div>
+          </div>
+
+          <dl className="grid shrink-0 grid-cols-2 gap-x-8 gap-y-4 text-[12px] lg:text-right">
+            {[
+              { label: '필명', value: novel.penName },
+              { label: '공개 회차', value: `${published.length}화` },
+              { label: '등장인물', value: `${characters.length}인` },
+              { label: '본문 삽화', value: `${sceneItems.length}컷` },
+            ].map((item) => (
+              <div key={item.label}>
+                <dt style={{ color: 'var(--ink-mute)' }}>{item.label}</dt>
+                <dd className="mt-1 text-[14px] font-extrabold">{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
+      {/* 등장인물 — 큰 포스터 카드 */}
+      {characters.length > 0 && (
+        <section id="characters" className="mt-8 scroll-mt-24">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Characters</p>
+              <h2 className="section-title">등장인물</h2>
+              <p className="mt-1.5 text-[12px]" style={{ color: 'var(--ink-mute)' }}>
+                이 작품을 움직이는 {characters.length}명. 카드의 대사는 첫 등장 회차에서 가져왔습니다.
+              </p>
+            </div>
+            <span className="chip chip-accent">{characters.length}명</span>
+          </div>
+          <CharacterStrip characters={characters} />
+        </section>
+      )}
+
+      {/* 🎨 명장면 일러스트 갤러리 */}
+      {sceneItems.length > 0 && (
+        <section className="mt-8">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Scene Gallery</p>
+              <h2 className="section-title">🎨 명장면 일러스트 갤러리</h2>
+              <p className="mt-1.5 text-[12px]" style={{ color: 'var(--ink-mute)' }}>
+                본문에 들어간 삽화 {sceneItems.length}컷. 눌러서 크게 보고, 그 장면의 회차로 바로 갑니다.
+              </p>
+            </div>
+          </div>
+          <SceneGallery items={sceneItems} />
+        </section>
+      )}
 
       <section className="card p-5 mt-4">
         <div className="flex items-end justify-between gap-3 mb-3">

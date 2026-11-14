@@ -109,7 +109,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     document.documentElement.setAttribute('data-theme', settings.theme)
     const meta = document.querySelector('meta[name="theme-color"]')
     if (meta) {
-      const colors: Record<ThemeName, string> = { light: '#f6f1e7', sepia: '#efe3cd', dark: '#111014' }
+      const colors: Record<ThemeName, string> = { light: '#f6f4f8', sepia: '#efe3cc', dark: '#0a0710' }
       meta.setAttribute('content', colors[settings.theme])
     }
   }, [settings.theme])

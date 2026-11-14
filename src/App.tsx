@@ -1,4 +1,5 @@
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { useEffect } from 'react'
+import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { StoreProvider } from './store/StoreProvider'
 import { Layout } from './components/Layout'
 import { HomePage } from './pages/HomePage'
@@ -9,10 +10,21 @@ import { TreePage } from './pages/TreePage'
 import { StudioPage } from './pages/StudioPage'
 import { AboutPage } from './pages/AboutPage'
 
+/** 화면을 옮기면 스크롤을 맨 위로 — 해시로 특정 위치를 지정한 경우엔 그쪽이 처리합니다. */
+function ScrollToTop() {
+  const { pathname, hash } = useLocation()
+  useEffect(() => {
+    if (hash) return
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [pathname, hash])
+  return null
+}
+
 export default function App() {
   return (
     <StoreProvider>
       <HashRouter>
+        <ScrollToTop />
         <Layout>
           <Routes>
             <Route path="/" element={<HomePage />} />
