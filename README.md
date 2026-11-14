@@ -25,7 +25,7 @@
 
 | 홈 (데스크톱) | 홈 (모바일) |
 | --- | --- |
-| ![home](docs/screenshots/01-home.png) | ![mobile](docs/screenshots/10-mobile.png) |
+| ![home](docs/screenshots/01-home.png) | ![mobile](docs/screenshots/09-mobile.png) |
 
 ### ② 작품 페이지 · 표지 + 등장인물
 표지를 크게 깔아 둔 작품 히어로, 시놉시스, 그리고 **등장인물 카드 스트립**이 있습니다.
@@ -33,7 +33,7 @@
 
 | 작품 페이지 | 등장인물 스트립 |
 | --- | --- |
-| ![novel](docs/screenshots/02-novel.png) | ![characters](docs/screenshots/13-characters.png) |
+| ![novel](docs/screenshots/12-novel.png) | ![characters](docs/screenshots/13-characters.png) |
 
 ### ③ 몰입형 회차 뷰어
 - 본문은 명조 계열 서체, **글자 크기 15~26px** 조절, **라이트 / 세피아 / 다크** 3가지 테마.
@@ -42,7 +42,7 @@
 - 회차 끝에서 **A/B VS 배틀 카드** → 선택 즉시 비율 막대가 애니메이션으로 채워지고
   “당신은 71% 다수파!” / “소수파!” 배지가 붙습니다.
 
-![리더](docs/screenshots/03-reader.png)
+![리더](docs/screenshots/02-reader.png)
 
 ### ④ A/B VS 배틀 카드
 선택지 A는 **로즈**, 선택지 B는 **인디고**로 색을 갈라 두고, 각 카드에 그 선택을 고르면 이어질
@@ -50,24 +50,24 @@
 
 | 투표 전 (VS) | 투표 후 (결과) |
 | --- | --- |
-| ![before](docs/screenshots/04-vote-before.png) | ![after](docs/screenshots/05-vote-after.png) |
+| ![before](docs/screenshots/03-vote-before.png) | ![after](docs/screenshots/04-vote-after.png) |
 
 | 모바일 투표 전 | 모바일 결과 |
 | --- | --- |
-| ![m-vote](docs/screenshots/11-mobile-vote.png) | ![m-after](docs/screenshots/12-mobile-vote-after.png) |
+| ![m-vote](docs/screenshots/10-mobile-vote.png) | ![m-after](docs/screenshots/11-mobile-vote-after.png) |
 
 ### ⑤ 결과 카드 공유 (1080×1920)
 Canvas 2D로 스토리 규격 PNG를 만듭니다. 선택지 **장면 그림 + 표지 썸네일**을 함께 그려서
 이미지 저장 / 클립보드 복사 / 회차 링크 복사가 가능합니다. (같은 출처 이미지라 캔버스가 오염되지 않습니다)
 
-![share](docs/screenshots/06-share-modal.png)
+![share](docs/screenshots/05-share-modal.png)
 
 ### ⑥ 분기 트리 시각화
 1화 → 2화(채택 루트 / 미채택 루트) → 3화 흐름을 인터랙티브 SVG 노드 트리로 보여 줍니다.
 부모 회차가 자식들의 가운데에 놓이도록 배치하고, **채택 루트는 굵은 실선**, 미채택은 가는 선,
 아직 쓰이지 않은 회차는 점선 “집필 중”으로 구분합니다. 노드를 누르면 해당 회차로 이동합니다.
 
-![tree](docs/screenshots/07-branch-tree.png)
+![tree](docs/screenshots/06-branch-tree.png)
 
 ### ⑦ 작가 스튜디오
 브라우저에서 바로 회차를 씁니다.
@@ -78,12 +78,12 @@ Canvas 2D로 스토리 규격 PNG를 만듭니다. 선택지 **장면 그림 + �
 
 발행하면 작품 피드 · 분기 트리 · 회차 목록에 **즉시 반영**되고, 회차 끝에 투표 카드가 열립니다.
 
-![studio](docs/screenshots/08-studio.png)
+![studio](docs/screenshots/07-studio.png)
 
 ### ⑧ 3가지 테마
 라이트 / 세피아 / 다크 모두 같은 디자인 토큰(표면·테두리·그림자·VS 색)을 공유합니다.
 
-![dark](docs/screenshots/09-dark.png)
+![dark](docs/screenshots/08-dark.png)
 
 ### ⑨ 샘플 콘텐츠 (모두 가상)
 바로 플레이할 수 있도록 세 작품을 넣어 두었습니다. 모든 작품·인물·필명·일러스트는 **가상**입니다.
