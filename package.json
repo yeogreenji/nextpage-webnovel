@@ -1,0 +1,27 @@
+{
+  "name": "nextpage-webnovel",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "넥스트페이지 — 독자가 A/B 투표로 다음 화를 고르는 선택형(브랜칭) 웹소설 플랫폼",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.9.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
+  }
+}
