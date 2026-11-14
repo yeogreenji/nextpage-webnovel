@@ -16,13 +16,18 @@ export function LibraryPage() {
 
   return (
     <div className="page-shell pt-8">
-      <p className="eyebrow">Library</p>
-      <h1 className="text-[24px] font-extrabold mt-1 tracking-tight">작품 목록</h1>
-      <p className="mt-2 text-[13px]" style={{ color: 'var(--ink-soft)' }}>
-        연재 중인 선택형 웹소설 {novels.length}편. 모든 작품은 회차마다 독자 투표로 갈라집니다.
-      </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="eyebrow">Library</p>
+          <h1 className="mt-1 text-[26px] sm:text-[30px] font-extrabold tracking-tight">작품 목록</h1>
+          <p className="mt-2 text-[13px] max-w-[560px]" style={{ color: 'var(--ink-soft)' }}>
+            연재 중인 선택형 웹소설 {novels.length}편. 모든 작품은 회차마다 독자 투표로 갈라집니다.
+          </p>
+        </div>
+        <span className="chip chip-accent">{list.length}편 표시 중</span>
+      </div>
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <div className="mt-5 flex flex-wrap gap-1.5">
         {genres.map((item) => (
           <button
             key={item}
@@ -41,7 +46,7 @@ export function LibraryPage() {
           불러오는 중…
         </p>
       ) : (
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="mt-6 book-grid">
           {list.map((novel) => (
             <NovelCard
               key={novel.id}

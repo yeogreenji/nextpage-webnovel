@@ -80,6 +80,15 @@ export function AboutPage() {
       </section>
 
       <section className="card p-5 mt-4">
+        <h2 className="text-[15px] font-extrabold">일러스트 안내</h2>
+        <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+          표지·인물 카드·선택지 장면 그림은 모두 AI로 생성한 가상의 이미지입니다. 실존 인물이나 실제
+          작품의 표지를 사용하지 않았고, 그림 파일은{' '}
+          <code className="chip">public/images/</code> 아래에 있습니다.
+        </p>
+      </section>
+
+      <section className="card p-5 mt-4">
         <h2 className="text-[15px] font-extrabold">만든 방식</h2>
         <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
           React 19 · TypeScript · Vite · Tailwind CSS로 만들었고, GitHub Pages에 그대로 배포할 수

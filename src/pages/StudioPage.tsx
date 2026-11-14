@@ -148,12 +148,20 @@ export function StudioPage() {
 
   return (
     <div className="page-shell pt-8">
-      <p className="eyebrow">Writer studio</p>
-      <h1 className="text-[24px] font-extrabold mt-1 tracking-tight">작가 스튜디오</h1>
-      <p className="mt-2 max-w-[620px] text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-        회차를 쓰고 A/B 선택지를 붙이면, 발행 즉시 작품 피드와 분기 트리에 반영됩니다. 발행된 회차부터
-        독자 투표가 열립니다.
-      </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="eyebrow">Writer studio</p>
+          <h1 className="mt-1 text-[26px] sm:text-[30px] font-extrabold tracking-tight">작가 스튜디오</h1>
+          <p className="mt-2 max-w-[620px] text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+            회차를 쓰고 A/B 선택지를 붙이면, 발행 즉시 작품 피드와 분기 트리에 반영됩니다. 발행된
+            회차부터 독자 투표가 열립니다.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <span className="pill pill-live">● 실시간 발행</span>
+          <span className="pill pill-genre">이 기기에 저장</span>
+        </div>
+      </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_340px] items-start">
         <div className="grid grid-cols-1 gap-4">

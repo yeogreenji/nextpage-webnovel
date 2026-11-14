@@ -4,9 +4,12 @@ import { useStore } from '../store/StoreProvider'
 import { ReaderToolbar } from '../components/ReaderToolbar'
 import { VotePanel } from '../components/VotePanel'
 import { CommentSection } from '../components/CommentSection'
+import { CharacterStrip } from '../components/CharacterStrip'
 import { Countdown } from '../components/Countdown'
-import { formatDateTime } from '../lib/format'
+import { ReadingProgress } from '../components/ReadingProgress'
+import { formatDateTime, readingMinutes } from '../lib/format'
 import { copyText } from '../lib/share-card'
+import { imageUrl } from '../data/art'
 
 export function EpisodePage() {
   const { novelId = '', episodeId = '' } = useParams()
@@ -50,7 +53,7 @@ export function EpisodePage() {
 
   if (!ready) {
     return (
-      <div className="page-shell py-20 text-center text-[13px]" style={{ color: 'var(--ink-mute)' }}>
+      <div className="page-shell py-24 text-center text-[13px]" style={{ color: 'var(--ink-mute)' }}>
         불러오는 중…
       </div>
     )
@@ -70,7 +73,7 @@ export function EpisodePage() {
   if (episode.status === 'pending') {
     return (
       <div className="page-shell py-16">
-        <div className="card p-6 max-w-[520px] mx-auto text-center">
+        <div className="card p-7 max-w-[520px] mx-auto text-center">
           <p className="eyebrow">Coming soon</p>
           <h1 className="mt-2 text-[19px] font-extrabold">{episode.title}</h1>
           <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
@@ -93,10 +96,14 @@ export function EpisodePage() {
   }
 
   const paragraphs = episode.body.split(/\n{2,}/).filter((line) => line.trim().length > 0)
+  const minutes = readingMinutes(episode.body)
 
   return (
-    <div className="page-shell pt-6 pb-6">
-      <nav className="flex items-center gap-1.5 text-[11.5px] mb-4" style={{ color: 'var(--ink-mute)' }}>
+    <div className="page-shell pt-5 pb-6">
+      <ReadingProgress />
+
+      <div className="reader-shell">
+        <nav className="flex items-center gap-1.5 text-[11.5px] mb-4" style={{ color: 'var(--ink-mute)' }}>
         <Link to="/library" className="hover:underline">
           작품
         </Link>
@@ -105,54 +112,93 @@ export function EpisodePage() {
           {novel.title}
         </Link>
         <span aria-hidden>·</span>
-        <span>{episode.no}화</span>
+        <span style={{ color: 'var(--ink-soft)' }}>{episode.no}화</span>
       </nav>
 
-      <header className="mb-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="chip chip-accent">{episode.no}화</span>
-          {episode.branchLabel && (
-            <span className="chip max-w-full truncate">“{episode.branchLabel}” 루트</span>
-          )}
-          {myVote && <span className="chip">투표 완료</span>}
-        </div>
-        <h1 className="mt-3 text-[24px] sm:text-[30px] font-extrabold tracking-tight leading-snug">
-          {episode.title}
-        </h1>
-        <div
-          className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]"
-          style={{ color: 'var(--ink-mute)' }}
-        >
-          <span className="font-semibold" style={{ color: 'var(--ink-soft)' }}>
-            {novel.penName}
-          </span>
-          <span>{formatDateTime(episode.publishedAt)} 공개</span>
-          <span>댓글 {commentCount}</span>
-          {episode.voteClosesAt && (
-            <span className="inline-flex items-center gap-1">
-              투표 <Countdown closesAt={episode.voteClosesAt} className="text-[11.5px]" />
-            </span>
-          )}
-          <button
-            type="button"
-            className="font-semibold underline decoration-dotted underline-offset-4"
-            onClick={async () => {
-              const ok = await copyText(window.location.href)
-              notify(ok ? '회차 링크를 복사했어요' : '링크를 복사하지 못했어요')
-            }}
+      {/* 회차 헤더 */}
+      <header className="chapter-frame px-5 py-5 sm:px-8 sm:py-7">
+        <div className="flex gap-4 sm:gap-6">
+          <Link
+            to={`/novel/${novel.id}`}
+            className="hidden sm:block shrink-0 w-[72px] rounded-xl overflow-hidden self-start"
+            style={{ boxShadow: '0 16px 34px -22px rgba(0,0,0,0.6)' }}
+            aria-label={`${novel.title} 작품 페이지`}
           >
-            링크 복사
-          </button>
+            {imageUrl(novel.coverImage) ? (
+              <img
+                src={imageUrl(novel.coverImage)}
+                alt=""
+                className="w-full aspect-[3/4] object-cover"
+              />
+            ) : (
+              <div
+                className="w-full aspect-[3/4]"
+                style={{ backgroundImage: `linear-gradient(150deg, ${novel.cover.from}, ${novel.cover.to})` }}
+              />
+            )}
+          </Link>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="pill pill-live">EP.{String(episode.no).padStart(2, '0')}</span>
+              <span className="pill pill-genre">{novel.genres[0]}</span>
+              {episode.branchLabel && (
+                <span className="pill pill-genre max-w-full truncate">“{episode.branchLabel}” 루트</span>
+              )}
+              {myVote && <span className="pill pill-dday">투표 완료</span>}
+            </div>
+
+            <h1 className="mt-3 text-[23px] sm:text-[31px] font-extrabold tracking-tight leading-snug">
+              {episode.title}
+            </h1>
+
+            <div
+              className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11.5px]"
+              style={{ color: 'var(--ink-mute)' }}
+            >
+              <span className="font-semibold" style={{ color: 'var(--ink-soft)' }}>
+                {novel.penName}
+              </span>
+              <span>{formatDateTime(episode.publishedAt)}</span>
+              <span>약 {minutes}분</span>
+              <span>댓글 {commentCount}</span>
+              {episode.voteClosesAt && (
+                <span className="inline-flex items-center gap-1">
+                  투표 <Countdown closesAt={episode.voteClosesAt} className="text-[11.5px]" />
+                </span>
+              )}
+              <button
+                type="button"
+                className="font-semibold underline decoration-dotted underline-offset-4"
+                onClick={async () => {
+                  const ok = await copyText(window.location.href)
+                  notify(ok ? '회차 링크를 복사했어요' : '링크를 복사하지 못했어요')
+                }}
+              >
+                링크 복사
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
-      <ReaderToolbar />
+      <div className="reader-toolbar mt-3">
+        <ReaderToolbar />
+      </div>
 
-      <article className="card mt-4 px-5 py-7 sm:px-10 sm:py-10 reader-body">
+      <article className="chapter-frame reader-body mt-4 px-5 py-8 sm:px-12 sm:py-12">
         {paragraphs.map((paragraph, index) => (
           <p key={index}>{paragraph}</p>
         ))}
+        <div className="mt-10 flex items-center justify-center gap-3" aria-hidden>
+          <span className="h-px w-10" style={{ background: 'var(--line-strong)' }} />
+          <span className="text-[13px]" style={{ color: 'var(--accent)' }}>
+            ❖
+          </span>
+          <span className="h-px w-10" style={{ background: 'var(--line-strong)' }} />
+        </div>
       </article>
+      </div>
 
       <VotePanel novel={novel} episode={episode} />
 
@@ -169,6 +215,25 @@ export function EpisodePage() {
           작품 페이지
         </Link>
       </div>
+
+      {novel.characters && novel.characters.length > 0 && (
+        <section className="mt-9">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Characters</p>
+              <h2 className="text-[17px] font-extrabold mt-1">이 작품의 인물</h2>
+            </div>
+            <Link
+              to={`/novel/${novel.id}`}
+              className="text-[11.5px] font-bold"
+              style={{ color: 'var(--accent)' }}
+            >
+              작품 페이지 →
+            </Link>
+          </div>
+          <CharacterStrip characters={novel.characters} />
+        </section>
+      )}
 
       <CommentSection novelId={novel.id} episodeId={episode.id} />
 

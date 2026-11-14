@@ -1,5 +1,6 @@
 import type { Comment, Episode, Novel, ReaderSettings, VoteRecord } from '../types'
 import { buildSeed } from '../data/seed'
+import { attachArt } from '../data/art'
 
 /** 데이터 레이어 계약 — 저장소를 바꿔도 화면 코드는 그대로 동작합니다. */
 export interface Snapshot {
@@ -61,18 +62,20 @@ export class LocalRepository implements NovelRepository {
       write(KEYS.novels, seed.novels)
       write(KEYS.episodes, seed.episodes)
       write(KEYS.comments, seed.comments)
+      const withArt = attachArt(seed.novels, seed.episodes)
       return {
-        novels: seed.novels,
-        episodes: seed.episodes,
+        novels: withArt.novels,
+        episodes: withArt.episodes,
         comments: seed.comments,
         votes: [],
         settings: read<ReaderSettings>(KEYS.settings) ?? DEFAULT_SETTINGS,
       }
     }
 
+    const withArt = attachArt(read<Novel[]>(KEYS.novels) ?? [], stored)
     return {
-      novels: read<Novel[]>(KEYS.novels) ?? [],
-      episodes: stored,
+      novels: withArt.novels,
+      episodes: withArt.episodes,
       comments: read<Comment[]>(KEYS.comments) ?? [],
       votes: read<VoteRecord[]>(KEYS.votes) ?? [],
       settings: read<ReaderSettings>(KEYS.settings) ?? DEFAULT_SETTINGS,

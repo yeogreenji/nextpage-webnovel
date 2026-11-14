@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
 import type { Episode, Novel } from '../types'
 import { Countdown } from './Countdown'
-import { formatNumber, formatRelative } from '../lib/format'
+import { formatDday, formatNumber } from '../lib/format'
 import { novelParticipants, nextOpenVote, tallyVotes } from '../lib/vote'
 import { useStore } from '../store/StoreProvider'
+import { imageUrl } from '../data/art'
 
 export function NovelCard({ novel, episodes }: { novel: Novel; episodes: Episode[] }) {
   const { votes } = useStore()
@@ -16,80 +17,81 @@ export function NovelCard({ novel, episodes }: { novel: Novel; episodes: Episode
   const participants = novelParticipants(episodes)
   const myVoted = episodes.filter((episode) => votes.some((vote) => vote.episodeId === episode.id)).length
   const leading = openVote ? tallyVotes(openVote, votes) : null
+  const dday = openVote ? formatDday(openVote.voteClosesAt) : null
+  const cover = imageUrl(novel.coverImage)
+  const hot = openVote !== null && (leading?.total ?? 0) > 1200
 
   return (
-    <article className="card card-tap overflow-hidden">
-      <Link to={`/novel/${novel.id}`} className="flex gap-4 p-4 sm:p-5">
-        <div
-          className="relative shrink-0 w-[92px] h-[124px] sm:w-[104px] sm:h-[140px] rounded-[14px] overflow-hidden flex items-end p-2.5"
-          style={{
-            backgroundImage: `linear-gradient(150deg, ${novel.cover.from}, ${novel.cover.to})`,
-          }}
-        >
-          <span className="absolute top-2 right-2.5 text-[26px] leading-none opacity-90 drop-shadow">
-            {novel.cover.glyph}
-          </span>
-          <span
-            className="relative text-[11px] font-bold leading-tight"
-            style={{ color: 'rgba(255,255,255,0.95)', textShadow: '0 1px 6px rgba(0,0,0,0.35)' }}
-          >
-            {novel.penName}
-          </span>
+    <article className="book-card">
+      <Link to={`/novel/${novel.id}`} className="flex flex-col h-full">
+        <div className="book-cover">
+          {cover ? (
+            <img src={cover} alt={`${novel.title} 표지 일러스트`} loading="lazy" decoding="async" />
+          ) : (
+            <div
+              className="book-cover-fallback"
+              style={{ backgroundImage: `linear-gradient(150deg, ${novel.cover.from}, ${novel.cover.to})` }}
+            >
+              <span className="text-[26px] leading-none opacity-90">{novel.cover.glyph}</span>
+            </div>
+          )}
+          <div className="book-cover-scrim" />
+          <div className="book-badges">
+            {openVote && <span className="pill pill-live">● LIVE</span>}
+            {hot && <span className="pill pill-hot">HOT</span>}
+            {dday && <span className="pill pill-dday">{dday}</span>}
+          </div>
+          <div className="book-cover-foot">
+            <span className="truncate">{novel.penName}</span>
+            <span className="text-[10px] font-semibold opacity-80 shrink-0">
+              {current ? `${current.no}화` : '준비 중'}
+            </span>
+          </div>
         </div>
 
-        <div className="min-w-0 flex-1 flex flex-col">
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {novel.genres.slice(0, 3).map((genre) => (
-              <span key={genre} className="chip chip-accent">
+        <div className="book-meta">
+          <div className="book-genres">
+            {novel.genres.slice(0, 2).map((genre) => (
+              <span key={genre} className="pill pill-genre">
                 {genre}
               </span>
             ))}
+            {novel.status === 'completed' && <span className="pill pill-dday">완결</span>}
           </div>
 
-          <h3 className="text-[16px] sm:text-[17px] font-extrabold leading-snug tracking-tight line-clamp-2">
-            {novel.title}
-          </h3>
-          <p className="mt-1 text-[12.5px] leading-relaxed line-clamp-1" style={{ color: 'var(--ink-mute)' }}>
-            {novel.tagline}
-          </p>
+          <h3 className="book-title">{novel.title}</h3>
+          <p className="book-tagline">{novel.tagline}</p>
 
-          <div className="mt-auto pt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px]">
-            <span className="chip">{current ? `${current.no}화 연재 중` : '연재 준비'}</span>
-            <span style={{ color: 'var(--ink-mute)' }}>
-              참여 {formatNumber(participants)}명
-            </span>
+          <div className="book-stats">
+            <span>참여 {formatNumber(participants)}명</span>
+            <span aria-hidden>·</span>
+            <span>{published.length}화 연재</span>
             {myVoted > 0 && (
-              <span style={{ color: 'var(--accent)' }} className="font-semibold">
-                내 선택 {myVoted}회
-              </span>
+              <>
+                <span aria-hidden>·</span>
+                <span style={{ color: 'var(--accent)' }} className="font-bold">
+                  내 선택 {myVoted}
+                </span>
+              </>
             )}
           </div>
 
           {openVote ? (
-            <div
-              className="mt-3 flex items-center justify-between gap-2 rounded-xl px-3 py-2"
-              style={{ background: 'var(--surface-2)' }}
-            >
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold truncate" style={{ color: 'var(--ink-soft)' }}>
-                  {openVote.no}화 투표 진행 중
-                  {leading && leading.leaderId && (
-                    <span style={{ color: 'var(--ink-mute)' }}>
-                      {' '}
-                      · 1위 {leading.percents[leading.leaderId]}%
-                    </span>
-                  )}
-                </p>
-                <Countdown closesAt={openVote.voteClosesAt} className="text-[11px]" />
-              </div>
-              <span className="text-[11px] font-bold shrink-0" style={{ color: 'var(--accent)' }}>
-                <span className="hidden sm:inline">지금 고르기 </span>→
+            <div className="book-vote" data-live="true">
+              <span className="min-w-0 flex flex-col gap-0.5">
+                <span className="truncate">
+                  {openVote.no}화 투표 · 1위 {leading?.percents[leading.leaderId ?? ''] ?? 0}%
+                </span>
+                <Countdown closesAt={openVote.voteClosesAt} className="text-[10.5px]" />
               </span>
+              <span className="shrink-0 font-extrabold">→</span>
             </div>
           ) : (
-            <p className="mt-3 text-[11px]" style={{ color: 'var(--ink-mute)' }}>
-              {current ? `${current.no}화 · ${formatRelative(current.publishedAt)} 공개` : '곧 공개됩니다'}
-            </p>
+            <div className="book-vote">
+              <span className="truncate" style={{ color: 'var(--ink-mute)' }}>
+                {current ? `${current.no}화 공개 완료` : '곧 공개됩니다'}
+              </span>
+            </div>
           )}
         </div>
       </Link>

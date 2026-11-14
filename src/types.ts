@@ -2,6 +2,20 @@
 
 export type ThemeName = 'light' | 'sepia' | 'dark'
 
+/** 등장인물 카드 */
+export interface Character {
+  id: string
+  name: string
+  /** 작품 속 역할 (예: 마케팅팀 3년차 대리) */
+  role: string
+  /** 남주 / 여주 / 조연 */
+  tag: '남주' | '여주' | '조연'
+  /** 카드에 한 줄로 노출되는 대사 */
+  quote: string
+  /** 인물 일러스트 경로 (public 기준) */
+  image?: string
+}
+
 /** 회차 끝에서 독자가 고르는 선택지 */
 export interface Choice {
   id: string
@@ -13,6 +27,8 @@ export interface Choice {
   targetEpisodeId: string | null
   /** 실제 독자가 고른 누적 수 (시드 + 이 기기에서의 투표) */
   baseVotes: number
+  /** 선택지 장면 일러스트 경로 (public 기준) */
+  image?: string
 }
 
 export type EpisodeStatus = 'published' | 'pending'
@@ -53,6 +69,12 @@ export interface Novel {
   genres: string[]
   penName: string
   cover: NovelCover
+  /** 표지 일러스트 경로 (public 기준) */
+  coverImage?: string
+  /** 히어로 배너용 와이드 아트 경로 */
+  heroImage?: string
+  /** 등장인물 카드 */
+  characters?: Character[]
   startEpisodeId: string
   createdAt: string
   status: 'ongoing' | 'completed'

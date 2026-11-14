@@ -15,14 +15,10 @@ export function ReaderToolbar() {
   const { settings, setTheme, setFontSize } = useStore()
 
   return (
-    <div
-      className="flex flex-wrap items-center justify-between gap-3 rounded-2xl px-3.5 py-2.5"
-      style={{ background: 'var(--surface-2)' }}
-    >
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] font-bold" style={{ color: 'var(--ink-mute)' }}>
-          배경
-        </span>
+    <div className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-2">
+      <span className="eyebrow">Reading</span>
+
+      <div className="flex flex-wrap items-center gap-2.5">
         <div className="segmented">
           {THEMES.map((theme) => (
             <button
@@ -35,43 +31,34 @@ export function ReaderToolbar() {
             </button>
           ))}
         </div>
-      </div>
 
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] font-bold" style={{ color: 'var(--ink-mute)' }}>
-          글자
-        </span>
-        <button
-          type="button"
-          className="btn btn-secondary btn-sm px-3"
-          style={{ paddingInline: 12 }}
-          onClick={() => setFontSize(Math.max(MIN, settings.fontSize - 1))}
-          aria-label="글자 작게"
-          disabled={settings.fontSize <= MIN}
-        >
-          가
-        </button>
-        <span className="text-[12px] font-bold tabular-nums w-9 text-center">
-          {settings.fontSize}
-        </span>
-        <button
-          type="button"
-          className="btn btn-secondary btn-sm"
-          style={{ paddingInline: 12, fontSize: 16 }}
-          onClick={() => setFontSize(Math.min(MAX, settings.fontSize + 1))}
-          aria-label="글자 크게"
-          disabled={settings.fontSize >= MAX}
-        >
-          가
-        </button>
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm"
-          onClick={() => setFontSize(18)}
-          aria-label="글자 크기 초기화"
-        >
-          초기화
-        </button>
+        <span className="w-px h-5" style={{ background: 'var(--line)' }} aria-hidden />
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            className="w-8 h-8 rounded-lg border text-[12px] font-bold transition-colors"
+            style={{ borderColor: 'var(--line)', background: 'var(--surface)', color: 'var(--ink-soft)' }}
+            onClick={() => setFontSize(Math.max(MIN, settings.fontSize - 1))}
+            aria-label="글자 작게"
+            disabled={settings.fontSize <= MIN}
+          >
+            가
+          </button>
+          <span className="w-8 text-center text-[11.5px] font-bold tabular-nums" style={{ color: 'var(--ink-mute)' }}>
+            {settings.fontSize}
+          </span>
+          <button
+            type="button"
+            className="w-8 h-8 rounded-lg border text-[15px] font-bold transition-colors"
+            style={{ borderColor: 'var(--line)', background: 'var(--surface)', color: 'var(--ink-soft)' }}
+            onClick={() => setFontSize(Math.min(MAX, settings.fontSize + 1))}
+            aria-label="글자 크게"
+            disabled={settings.fontSize >= MAX}
+          >
+            가
+          </button>
+        </div>
       </div>
     </div>
   )

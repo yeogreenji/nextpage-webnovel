@@ -56,3 +56,20 @@ export function formatRemaining(remaining: Remaining): string {
   }
   return `${pad(remaining.hours)}:${pad(remaining.minutes)}:${pad(remaining.seconds)}`
 }
+
+/** 남은 시간을 D-day 표기로 바꿉니다. (예: D-2, D-DAY, 마감) */
+export function formatDday(iso: string | null, now = Date.now()): string {
+  if (!iso) return '-'
+  const remaining = remainingUntil(iso, now)
+  if (remaining.closed) return '마감'
+  if (remaining.totalMs < 24 * 3600 * 1000) {
+    return remaining.days === 0 && remaining.hours < 12 ? 'D-DAY' : 'D-1'
+  }
+  return `D-${Math.ceil(remaining.totalMs / 86400000)}`
+}
+
+/** 예상 읽기 시간(분). 한국어 기준 분당 약 500자 */
+export function readingMinutes(text: string): number {
+  const chars = text.replace(/\s/g, '').length
+  return Math.max(1, Math.round(chars / 500))
+}

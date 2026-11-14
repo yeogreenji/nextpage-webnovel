@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
 import { BranchTree } from '../components/BranchTree'
+import { imageUrl } from '../data/art'
 
 export function TreePage() {
   const { novelId = '' } = useParams()
@@ -37,13 +38,30 @@ export function TreePage() {
         <span>분기 트리</span>
       </nav>
 
-      <h1 className="text-[22px] sm:text-[26px] font-extrabold tracking-tight">이야기 분기 트리</h1>
-      <p className="mt-2 text-[13px] leading-relaxed max-w-[620px]" style={{ color: 'var(--ink-soft)' }}>
-        회차마다 독자가 고른 방향으로 다음 화가 이어집니다. 채택 루트는 계속 이어지고, 미채택 루트도
-        읽을 수 있습니다. 회차를 눌러 바로 이동하세요.
-      </p>
+      <section className="hero-band mb-5">
+        <div className="hero-band-bg">
+          {imageUrl(novel.coverImage) && <img src={imageUrl(novel.coverImage)} alt="" aria-hidden />}
+        </div>
+        <div className="hero-band-scrim" />
+        <div className="relative z-[2] p-6 sm:p-8 text-[#fffaf7]">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="pill pill-ghost">Branching Tree</span>
+            <span className="pill pill-ghost">{novel.genres[0]}</span>
+          </div>
+          <h1 className="mt-3 text-[22px] sm:text-[27px] font-extrabold tracking-tight">
+            이야기 분기 트리
+          </h1>
+          <p
+            className="mt-2 text-[12.5px] leading-relaxed max-w-[560px]"
+            style={{ color: 'rgba(255,250,247,0.72)' }}
+          >
+            회차마다 독자가 고른 방향으로 다음 화가 이어집니다. 채택 루트는 계속 이어지고, 미채택
+            루트도 읽을 수 있습니다. 회차를 눌러 바로 이동하세요.
+          </p>
+        </div>
+      </section>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3 text-[11.5px]" style={{ color: 'var(--ink-mute)' }}>
+      <div className="flex flex-wrap items-center gap-3 text-[11.5px]" style={{ color: 'var(--ink-mute)' }}>
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block w-6 h-[2.4px] rounded" style={{ background: 'var(--accent)' }} />
           채택 루트

@@ -6,10 +6,12 @@ interface Props {
   className?: string
   /** 마감 임박(1시간 이내)에 강조 표시 */
   urgentAccent?: boolean
+  /** 어두운 배경(히어로 등) 위에서 쓰는 밝은 색상 */
+  onDark?: boolean
 }
 
 /** 1초마다 갱신되는 투표 마감 카운트다운 */
-export function Countdown({ closesAt, className = '', urgentAccent = true }: Props) {
+export function Countdown({ closesAt, className = '', urgentAccent = true, onDark = false }: Props) {
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
@@ -26,7 +28,15 @@ export function Countdown({ closesAt, className = '', urgentAccent = true }: Pro
     <span
       className={`inline-flex items-center gap-1.5 font-semibold tabular-nums ${className}`}
       style={{
-        color: remaining.closed ? 'var(--ink-mute)' : urgent ? 'var(--accent)' : 'var(--ink-soft)',
+        color: onDark
+          ? remaining.closed
+            ? 'rgba(255,250,247,0.5)'
+            : '#fffaf7'
+          : remaining.closed
+            ? 'var(--ink-mute)'
+            : urgent
+              ? 'var(--accent)'
+              : 'var(--ink-soft)',
       }}
       title={new Date(closesAt).toLocaleString('ko-KR')}
     >
