@@ -1477,7 +1477,7 @@ body {
     top: 0;
     right: 0;
     bottom: 0;
-    width: 44%;
+    width: 50%;
     overflow: hidden;
     display: none;
   }
@@ -1500,8 +1500,8 @@ body {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(to right, #14101a 0%, rgba(20, 16, 26, 0.86) 18%, rgba(20, 16, 26, 0.35) 46%, rgba(20, 16, 26, 0) 78%),
-      linear-gradient(to top, rgba(14, 9, 13, 0.78), transparent 55%);
+    background: linear-gradient(to right, #14101a 0%, rgba(20, 16, 26, 0.9) 12%, rgba(20, 16, 26, 0.45) 38%, rgba(20, 16, 26, 0) 68%),
+      linear-gradient(to top, rgba(14, 9, 13, 0.6), transparent 60%);
   }
 
   /* 읽기 화면의 본문 단(줄 길이 제한) */

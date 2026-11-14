@@ -43,6 +43,11 @@ export function TreePage() {
           {imageUrl(novel.coverImage) && <img src={imageUrl(novel.coverImage)} alt="" aria-hidden />}
         </div>
         <div className="hero-band-scrim" />
+        <div className="hero-band-art">
+          {imageUrl(novel.coverImage) && (
+            <img src={imageUrl(novel.coverImage)} alt="" aria-hidden />
+          )}
+        </div>
         <div className="relative z-[2] p-6 sm:p-8 text-[#fffaf7]">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="pill pill-ghost">Branching Tree</span>

@@ -21,6 +21,9 @@ create table public.novels (
   genres        text[] not null default '{}',
   pen_name      text not null,
   cover         jsonb not null default '{}'::jsonb,   -- { from, to, glyph }
+  cover_image   text,                                 -- 표지 일러스트 경로 (storage/버킷 또는 CDN)
+  hero_image    text,                                 -- 히어로 배너용 와이드 아트
+  characters    jsonb not null default '[]'::jsonb,   -- [{ id, name, role, tag, quote, image }]
   start_episode_id text,
   status        text not null default 'ongoing' check (status in ('ongoing', 'completed')),
   created_at    timestamptz not null default now()
@@ -50,6 +53,7 @@ create table public.choices (
   hint              text not null default '',
   target_episode_id text references public.episodes (id) on delete set null,
   position          int  not null check (position in (0, 1)),  -- 0 = A, 1 = B
+  image             text,                                     -- 선택지 장면 일러스트 경로
   constraint choices_unique_position unique (episode_id, position)
 );
 
