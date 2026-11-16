@@ -99,10 +99,36 @@ export interface VoteRecord {
   votedAt: string
 }
 
+export type ReaderFont = 'serif' | 'sans'
+
 export interface ReaderSettings {
   theme: ThemeName
   /** 본문 글자 크기(px) */
   fontSize: number
+  /** 본문 줄간격 (1.6 ~ 2.4) */
+  lineHeight: number
+  /** 본문 서체 — 명조(serif) / 고딕(sans) */
+  font: ReaderFont
+}
+
+/** 본문 중간에 끼워 넣는 삽화 한 컷 */
+export interface InlineScene {
+  image: string
+  caption: string
+  /** 이 문장이 들어 있는 문단 '뒤'에 삽화를 놓습니다. */
+  anchor: string
+  /** anchor 문단을 찾지 못했을 때 놓을 문단 인덱스 (0-based) */
+  fallbackAfter: number
+}
+
+/** 캐릭터 톡 대화 한 줄 */
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'character'
+  text: string
+  at: string
+  /** AI가 만든 답장인지, 기기 안 상황 응답인지 */
+  source?: 'ai' | 'offline'
 }
 
 /** 화면에서 쓰는 집계 결과 */

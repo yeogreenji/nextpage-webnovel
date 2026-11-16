@@ -21,7 +21,15 @@ export interface NovelRepository {
   reset(): Promise<void>
 }
 
-export const DEFAULT_SETTINGS: ReaderSettings = { theme: 'dark', fontSize: 18 }
+export const DEFAULT_SETTINGS: ReaderSettings = {
+  theme: 'dark',
+  fontSize: 18,
+  lineHeight: 2,
+  font: 'serif',
+}
+
+/** 시드 콘텐츠 버전 — 새 작품·회차를 기존 저장분 위에 얹을 때 씁니다. */
+const SEED_VERSION = 4
 
 const KEYS = {
   novels: 'np.novels.v1',
@@ -29,6 +37,7 @@ const KEYS = {
   comments: 'np.comments.v1',
   votes: 'np.votes.v1',
   settings: 'np.settings.v1',
+  version: 'np.seed.version.v1',
 } as const
 
 function read<T>(key: string): T | null {
@@ -49,12 +58,59 @@ function write(key: string, value: unknown): void {
   }
 }
 
+function readSettings(): ReaderSettings {
+  const stored = read<Partial<ReaderSettings>>(KEYS.settings)
+  return { ...DEFAULT_SETTINGS, ...(stored ?? {}) }
+}
+
+/**
+ * 이 기기에 남아 있는 예전 시드에 새 작품·새 회차를 더합니다.
+ * - 사용자가 스튜디오에서 고친 글은 건드리지 않습니다.
+ * - 아직 '집필 중'이던 노드가 정식 연재로 바뀌면 새 본문으로 교체합니다.
+ */
+function mergeSeedContent(): void {
+  const seed = buildSeed()
+  const storedEpisodes = read<Episode[]>(KEYS.episodes)
+  if (!storedEpisodes || storedEpisodes.length === 0) return
+
+  const storedNovels = read<Novel[]>(KEYS.novels) ?? []
+  const storedComments = read<Comment[]>(KEYS.comments) ?? []
+  const seedEpisodes = new Map(seed.episodes.map((episode) => [episode.id, episode]))
+  const storedEpisodeIds = new Set(storedEpisodes.map((episode) => episode.id))
+
+  const nextEpisodes = storedEpisodes.map((episode) => {
+    const fresh = seedEpisodes.get(episode.id)
+    if (!fresh) return episode
+    return episode.status === 'pending' && fresh.status === 'published' ? fresh : episode
+  })
+  seed.episodes.forEach((episode) => {
+    if (!storedEpisodeIds.has(episode.id)) nextEpisodes.push(episode)
+  })
+
+  const novelIds = new Set(storedNovels.map((novel) => novel.id))
+  const nextNovels = [...storedNovels, ...seed.novels.filter((novel) => !novelIds.has(novel.id))]
+
+  const commentIds = new Set(storedComments.map((comment) => comment.id))
+  const nextComments = [
+    ...storedComments,
+    ...seed.comments.filter((comment) => !commentIds.has(comment.id)),
+  ]
+
+  write(KEYS.novels, nextNovels)
+  write(KEYS.episodes, nextEpisodes)
+  write(KEYS.comments, nextComments)
+  write(KEYS.version, SEED_VERSION)
+}
+
 /**
  * 이 기기에 저장하는 기본 구현.
  * 서버 없이도 투표·댓글·집필 기록이 남아, 배포만 하면 바로 체험할 수 있습니다.
  */
 export class LocalRepository implements NovelRepository {
   async load(): Promise<Snapshot> {
+    const version = read<number>(KEYS.version) ?? 1
+    if (version < SEED_VERSION) mergeSeedContent()
+
     const stored = read<Episode[]>(KEYS.episodes)
 
     if (!stored || stored.length === 0) {
@@ -62,13 +118,14 @@ export class LocalRepository implements NovelRepository {
       write(KEYS.novels, seed.novels)
       write(KEYS.episodes, seed.episodes)
       write(KEYS.comments, seed.comments)
+      write(KEYS.version, SEED_VERSION)
       const withArt = attachArt(seed.novels, seed.episodes)
       return {
         novels: withArt.novels,
         episodes: withArt.episodes,
         comments: seed.comments,
         votes: [],
-        settings: read<ReaderSettings>(KEYS.settings) ?? DEFAULT_SETTINGS,
+        settings: readSettings(),
       }
     }
 
@@ -78,7 +135,7 @@ export class LocalRepository implements NovelRepository {
       episodes: withArt.episodes,
       comments: read<Comment[]>(KEYS.comments) ?? [],
       votes: read<VoteRecord[]>(KEYS.votes) ?? [],
-      settings: read<ReaderSettings>(KEYS.settings) ?? DEFAULT_SETTINGS,
+      settings: readSettings(),
     }
   }
 
@@ -123,8 +180,7 @@ export class LocalRepository implements NovelRepository {
         // 무시
       }
     })
-  }
-}
+  }}
 
 let cached: NovelRepository | null = null
 

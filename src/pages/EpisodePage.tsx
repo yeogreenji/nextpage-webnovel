@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
 import { ReaderToolbar } from '../components/ReaderToolbar'
 import { VotePanel } from '../components/VotePanel'
@@ -14,6 +14,7 @@ import { EPISODE_SCENES, imageUrl, placeScenes } from '../data/art'
 export function EpisodePage() {
   const { novelId = '', episodeId = '' } = useParams()
   const location = useLocation()
+  const navigate = useNavigate()
   const { ready, novels, episodes, comments, votes, notify } = useStore()
 
   const novel = novels.find((item) => item.id === novelId)
@@ -105,6 +106,20 @@ export function EpisodePage() {
       <ReadingProgress />
 
       <div className="reader-shell">
+        {/* 📖 소설로 쭉 읽기 — 상단 토글 */}
+        <div className="story-entry-bar">
+          <span className="story-entry-label">
+            지금까지 내 선택이 이어진 이야기를 한 편의 소설로 읽을 수 있어요
+          </span>
+          <button
+            type="button"
+            className="story-entry-btn"
+            onClick={() => navigate(`/novel/${novel.id}/read?from=${episode.id}`)}
+          >
+            📖 소설로 쭉 읽기
+          </button>
+        </div>
+
         <nav className="flex items-center gap-1.5 text-[11.5px] mb-4" style={{ color: 'var(--ink-mute)' }}>
         <Link to="/library" className="hover:underline">
           작품
@@ -219,6 +234,18 @@ export function EpisodePage() {
       </div>
 
       <VotePanel novel={novel} episode={episode} />
+
+      {/* 하단 토글 — 투표 후에도 바로 정주행 모드로 */}
+      <div className="story-entry-bar mt-5">
+        <span className="story-entry-label">선택한 분기를 한 편의 소설로 이어 읽기</span>
+        <button
+          type="button"
+          className="story-entry-btn"
+          onClick={() => navigate(`/novel/${novel.id}/read?from=${episode.id}`)}
+        >
+          📖 소설로 쭉 읽기
+        </button>
+      </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Link to={`/novel/${novel.id}/tree`} className="btn btn-secondary btn-sm">

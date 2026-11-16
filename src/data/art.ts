@@ -146,6 +146,132 @@ export const NOVEL_ART: Record<string, NovelArt> = {
       },
     ],
   },
+  'nv-regress': {
+    cover: 'images/covers/nv-regress.jpg',
+    hero: 'images/covers/hero-regress.jpg',
+    characters: [
+      {
+        id: 'ch-seorin',
+        name: '한서린',
+        role: '태강그룹 장녀 · 두 번째 스물넷',
+        tag: '여주',
+        badge: '여주',
+        quote: '이번 생에는, 순서를 바꿉니다.',
+        image: 'images/characters/nv-regress-seorin.jpg',
+      },
+      {
+        id: 'ch-regress-dohyeon',
+        name: '강도현',
+        role: '태강그룹 법무실 수석 변호사',
+        tag: '남주',
+        badge: '남주',
+        quote: '웃으실 때는, 보통 누군가 다칩니다.',
+        image: 'images/characters/nv-regress-dohyeon.jpg',
+      },
+      {
+        id: 'ch-jihun',
+        name: '한지훈',
+        role: '이복동생 · 유일한 상속 경쟁자',
+        tag: '조연',
+        badge: '경쟁자',
+        quote: '누나가 그 자리에 앉는 건, 이번 생에도 무리일 텐데요.',
+        image: 'images/characters/nv-regress-jihun.jpg',
+      },
+      {
+        id: 'ch-miran',
+        name: '오미란',
+        role: '회장 비서실장 · 이십 년 근속',
+        tag: '조연',
+        badge: '비서실장',
+        quote: '회장님은 아직, 아무것도 모르고 계십니다.',
+        image: 'images/characters/nv-regress-miran.jpg',
+      },
+    ],
+  },
+  'nv-academy': {
+    cover: 'images/covers/nv-academy.jpg',
+    hero: 'images/covers/hero-academy.jpg',
+    characters: [
+      {
+        id: 'ch-ria',
+        name: '리아',
+        role: '마력 0 판정을 받은 평민 입학생',
+        tag: '여주',
+        badge: '여주',
+        quote: '주문을 못 외우면, 새로 쓰면 되잖아요.',
+        image: 'images/characters/nv-academy-ria.jpg',
+      },
+      {
+        id: 'ch-kaiien',
+        name: '카이렌',
+        role: '수석 졸업생 · 마법 감독관',
+        tag: '남주',
+        badge: '남주',
+        quote: '그 책을 연 순간부터, 당신은 제 관리 대상입니다.',
+        image: 'images/characters/nv-academy-kaiien.jpg',
+      },
+      {
+        id: 'ch-serena',
+        name: '세레나',
+        role: '아르덴 백작가 영애 · 전 학년 수석',
+        tag: '조연',
+        badge: '라이벌',
+        quote: '출신 없는 마법은, 시험에 통하지 않아요.',
+        image: 'images/characters/nv-academy-serena.jpg',
+      },
+      {
+        id: 'ch-mumyeong',
+        name: '무명',
+        role: '4층 서고의 사서 · 이름을 묻지 마세요',
+        tag: '조연',
+        badge: '사서',
+        quote: '네가 이름을 붙이는 순간, 마법이 됩니다.',
+        image: 'images/characters/nv-academy-mumyeong.jpg',
+      },
+    ],
+  },
+  'nv-cafe': {
+    cover: 'images/covers/nv-cafe.jpg',
+    hero: 'images/covers/hero-cafe.jpg',
+    characters: [
+      {
+        id: 'ch-soyeon',
+        name: '소연',
+        role: '새벽 카페 은하수의 주인',
+        tag: '여주',
+        badge: '여주',
+        quote: '오늘은, 그냥 앉아 있어도 돼요.',
+        image: 'images/characters/nv-cafe-soyeon.jpg',
+      },
+      {
+        id: 'ch-cafe-dohyeon',
+        name: '도현',
+        role: '매일 새벽 두 시에 오는 손님',
+        tag: '남주',
+        badge: '남주',
+        quote: '계란 하나 더 넣어 주세요. 오늘은 좀 길었어요.',
+        image: 'images/characters/nv-cafe-dohyeon.jpg',
+      },
+      {
+        id: 'ch-myeongsuk',
+        name: '명숙',
+        role: '새벽 세 시의 단골 할머니',
+        tag: '조연',
+        badge: '단골',
+        quote: '젊은 사람이 밤을 이렇게 새면, 몸이 서운해해.',
+        image: 'images/characters/nv-cafe-myeongsuk.jpg',
+      },
+      {
+        id: 'ch-taeo',
+        name: '태오',
+        role: '카페를 인수하려는 옛 동료',
+        tag: '조연',
+        badge: '경쟁자',
+        quote: '이 가게, 여기 있어야 할 이유가 있습니까?',
+        image: 'images/characters/nv-cafe-taeo.jpg',
+      },
+    ],
+  },
 }
 
 /** 선택지 id → 장면 일러스트 */
@@ -166,17 +292,46 @@ export const CHOICE_ART: Record<string, string> = {
   'ep-contract-2b-b': 'images/scenes/ep-contract-2b-b.jpg',
   'ep-parcel-1-a': 'images/scenes/ep-parcel-1-a.jpg',
   'ep-parcel-1-b': 'images/scenes/ep-parcel-1-b.jpg',
+  'ep-office-3b-a': 'images/scenes/story-office-3b.jpg',
+  'ep-office-3b-b': 'images/scenes/story-office-3c.jpg',
+  'ep-office-3c-a': 'images/scenes/story-office-3c.jpg',
+  'ep-office-3c-b': 'images/scenes/story-office-1.jpg',
+  'ep-contract-3a-a': 'images/scenes/story-contract-3a.jpg',
+  'ep-contract-3a-b': 'images/scenes/story-contract-3b.jpg',
+  'ep-contract-3b-a': 'images/scenes/story-contract-3b.jpg',
+  'ep-contract-3b-b': 'images/scenes/story-contract-3a.jpg',
+  'ep-parcel-2a-a': 'images/scenes/story-parcel-2a.jpg',
+  'ep-parcel-2a-b': 'images/scenes/story-parcel-2b.jpg',
+  'ep-parcel-2b-a': 'images/scenes/story-parcel-2b.jpg',
+  'ep-parcel-2b-b': 'images/scenes/story-parcel-2a.jpg',
+  'ep-regress-1-a': 'images/scenes/ep-regress-1-a.jpg',
+  'ep-regress-1-b': 'images/scenes/ep-regress-1-b.jpg',
+  'ep-regress-2a-a': 'images/scenes/story-regress-2.jpg',
+  'ep-regress-2a-b': 'images/scenes/ep-regress-1-a.jpg',
+  'ep-regress-2b-a': 'images/scenes/ep-regress-1-b.jpg',
+  'ep-regress-2b-b': 'images/scenes/story-regress-1.jpg',
+  'ep-regress-3a-a': 'images/covers/hero-regress.jpg',
+  'ep-regress-3a-b': 'images/scenes/story-regress-2.jpg',
+  'ep-academy-1-a': 'images/scenes/ep-academy-1-a.jpg',
+  'ep-academy-1-b': 'images/scenes/ep-academy-1-b.jpg',
+  'ep-academy-2a-a': 'images/scenes/story-academy-2.jpg',
+  'ep-academy-2a-b': 'images/scenes/ep-academy-1-a.jpg',
+  'ep-academy-2b-a': 'images/scenes/story-academy-1.jpg',
+  'ep-academy-2b-b': 'images/scenes/ep-academy-1-b.jpg',
+  'ep-academy-3a-a': 'images/scenes/story-academy-2.jpg',
+  'ep-academy-3a-b': 'images/covers/hero-academy.jpg',
+  'ep-cafe-1-a': 'images/scenes/ep-cafe-1-a.jpg',
+  'ep-cafe-1-b': 'images/scenes/ep-cafe-1-b.jpg',
+  'ep-cafe-2a-a': 'images/scenes/story-cafe-2.jpg',
+  'ep-cafe-2a-b': 'images/scenes/ep-cafe-1-b.jpg',
+  'ep-cafe-2b-a': 'images/scenes/ep-cafe-1-b.jpg',
+  'ep-cafe-2b-b': 'images/scenes/story-cafe-1.jpg',
+  'ep-cafe-3a-a': 'images/scenes/story-cafe-2.jpg',
+  'ep-cafe-3a-b': 'images/covers/hero-cafe.jpg',
 }
 
-/** 본문 중간에 끼워 넣는 삽화 한 컷 */
-export interface InlineScene {
-  image: string
-  caption: string
-  /** 이 문장이 들어 있는 문단 '뒤'에 삽화를 놓습니다. */
-  anchor: string
-  /** anchor 문단을 찾지 못했을 때 놓을 문단 인덱스 (0-based) */
-  fallbackAfter: number
-}
+export type { InlineScene } from '../types'
+import type { InlineScene } from '../types'
 
 /**
  * 회차 id → 본문 삽화.
@@ -250,6 +405,150 @@ export const EPISODE_SCENES: Record<string, InlineScene[]> = {
       image: 'images/scenes/story-parcel-1.jpg',
       caption: '세 번째 상자. 받는 사람은 여전히, 사흘 뒤의 나.',
       anchor: '바닥에 상자 하나',
+      fallbackAfter: 18,
+    },
+  ],
+  'ep-office-3b': [
+    {
+      image: 'images/scenes/story-office-3b.jpg',
+      caption: '회의가 끝난 회의실. 누가 만든 안인지는, 숫자가 기억한다.',
+      anchor: '이 안은 하윤 대리가 만든 겁니다',
+      fallbackAfter: 10,
+    },
+  ],
+  'ep-office-3c': [
+    {
+      image: 'images/scenes/story-office-3c.jpg',
+      caption: '새벽 세 시, 표는 완성됐다. 손등의 반창고는 아직 붙어 있었다.',
+      anchor: '표가 완성됐다',
+      fallbackAfter: 22,
+    },
+  ],
+  'ep-contract-3a': [
+    {
+      image: 'images/scenes/story-contract-3a.jpg',
+      caption: '이름을 되찾는 날, 문은 닫힌다. 이름은 남는다.',
+      anchor: '이름은 남는다',
+      fallbackAfter: 4,
+    },
+  ],
+  'ep-contract-3b': [
+    {
+      image: 'images/scenes/story-contract-3b.jpg',
+      caption: '계약서의 두 번째 서명란은, 백 년 동안 비어 있었다.',
+      anchor: '서명란은 두 칸이었다',
+      fallbackAfter: 14,
+    },
+  ],
+  'ep-parcel-2a': [
+    {
+      image: 'images/scenes/story-parcel-2a.jpg',
+      caption: '상자 안에는 앨범이 있었다. 다섯 번째 장은 오늘 밤이었다.',
+      anchor: '다섯 번째 장. 오늘 밤이었다',
+      fallbackAfter: 8,
+    },
+  ],
+  'ep-parcel-2b': [
+    {
+      image: 'images/scenes/story-parcel-2b.jpg',
+      caption: '가로등 아래의 사람은, 얼굴이 아니라 손을 보여 주었다.',
+      anchor: '그 사람의 손을 봤다',
+      fallbackAfter: 8,
+    },
+  ],
+  'ep-regress-1': [
+    {
+      image: 'images/scenes/story-regress-1.jpg',
+      caption: '오후 다섯 시, 금고에 들어갈 봉투. 서린은 그 전에 손을 대기로 했다.',
+      anchor: '유언장 초안이 들어간다',
+      fallbackAfter: 12,
+    },
+  ],
+  'ep-regress-2a': [
+    {
+      image: 'images/scenes/ep-regress-1-a.jpg',
+      caption: '책장 뒤의 금고, 세 번째 칸의 봉투. 여덟 장 중 다섯 장째에서 손이 멈췄다.',
+      anchor: '봉투는 세 번째 칸에 있었다',
+      fallbackAfter: 6,
+    },
+  ],
+  'ep-regress-2b': [
+    {
+      image: 'images/scenes/ep-regress-1-b.jpg',
+      caption: '시장 과일가게. 이십 년 전 비서는 사과 하나를 밀어 주었다.',
+      anchor: '사과 하나를 서린 쪽으로 밀었다',
+      fallbackAfter: 20,
+    },
+  ],
+  'ep-regress-3a': [
+    {
+      image: 'images/scenes/story-regress-2.jpg',
+      caption: '오전 아홉 시, 회장실. 아무도 읽지 않은 7장이 테이블 위에 놓였다.',
+      anchor: '7장을 테이블 위에 밀었다',
+      fallbackAfter: 10,
+    },
+  ],
+  'ep-academy-1': [
+    {
+      image: 'images/scenes/story-academy-1.jpg',
+      caption: '4층 서고, 이름이 없는 책. 첫 글자를 쓰기 직전의 밤.',
+      anchor: '첫 글자를 쓰려고 손을 댔다',
+      fallbackAfter: 26,
+    },
+  ],
+  'ep-academy-2a': [
+    {
+      image: 'images/scenes/ep-academy-1-a.jpg',
+      caption: '이름 두 글자가 빛나자, 서고의 주문이 거꾸로 읽혔다.',
+      anchor: '룬이 뒤집혔다',
+      fallbackAfter: 4,
+    },
+  ],
+  'ep-academy-2b': [
+    {
+      image: 'images/scenes/ep-academy-1-b.jpg',
+      caption: '사서의 조건은 책이 아니라 이름이었다.',
+      anchor: '사서가 리아에게 조건을 제시했다',
+      fallbackAfter: 14,
+    },
+  ],
+  'ep-academy-3a': [
+    {
+      image: 'images/scenes/story-academy-2.jpg',
+      caption: '감독관실, 서리로 그린 시험 원. 이름 없이도 마법은 대답했다.',
+      anchor: '결계를 건드린 마법사는',
+      fallbackAfter: 14,
+    },
+  ],
+  'ep-cafe-1': [
+    {
+      image: 'images/scenes/story-cafe-1.jpg',
+      caption: '새벽 두 시, 계란 두 개가 들어간 라면 한 그릇.',
+      anchor: '계란을 하나 더 넣었다',
+      fallbackAfter: 18,
+    },
+  ],
+  'ep-cafe-2a': [
+    {
+      image: 'images/scenes/ep-cafe-1-a.jpg',
+      caption: '메뉴판에 치즈가 늘어난 날. 손님은 그걸 기억하지 못했다.',
+      anchor: '치즈를 사 둔 것이었다',
+      fallbackAfter: 8,
+    },
+  ],
+  'ep-cafe-2b': [
+    {
+      image: 'images/scenes/ep-cafe-1-b.jpg',
+      caption: '서비스의 영수증은, 손글씨 쪽지 한 장이었다.',
+      anchor: '오늘 라면값은 다음 손님 라면값으로 갚겠습니다',
+      fallbackAfter: 6,
+    },
+  ],
+  'ep-cafe-3a': [
+    {
+      image: 'images/scenes/story-cafe-2.jpg',
+      caption: '20년치 외상 장부. 갚은 이름에만 별이 붙어 있었다.',
+      anchor: '2005년 4월, 세 번째 줄',
       fallbackAfter: 18,
     },
   ],

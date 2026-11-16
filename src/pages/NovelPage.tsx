@@ -5,6 +5,7 @@ import { BranchTree } from '../components/BranchTree'
 import { CharacterStrip } from '../components/CharacterStrip'
 import { SceneGallery } from '../components/SceneGallery'
 import { Countdown } from '../components/Countdown'
+import { CharacterTalkSection } from '../components/CharacterTalkSection'
 import { formatNumber, formatRelative } from '../lib/format'
 import { novelParticipants, tallyVotes } from '../lib/vote'
 import { imageUrl, scenesForEpisodes } from '../data/art'
@@ -152,6 +153,11 @@ export function NovelPage() {
                   1화부터 읽기
                 </Link>
               )}
+              {first && (
+                <Link to={`/novel/${novel.id}/read`} className="btn btn-glass">
+                  📖 소설로 쭉 읽기
+                </Link>
+              )}
               <Link to={`/novel/${novel.id}/tree`} className="btn btn-glass">
                 분기 트리
               </Link>
@@ -224,6 +230,11 @@ export function NovelPage() {
           </div>
           <CharacterStrip characters={characters} />
         </section>
+      )}
+
+      {/* 💬 캐릭터 톡 */}
+      {characters.length > 0 && (
+        <CharacterTalkSection novel={novel} characters={characters} currentEpisode={first} />
       )}
 
       {/* 🎨 명장면 일러스트 갤러리 */}

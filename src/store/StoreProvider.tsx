@@ -12,6 +12,7 @@ import type {
   Comment,
   Episode,
   Novel,
+  ReaderFont,
   ReaderSettings,
   ThemeName,
   VoteRecord,
@@ -46,6 +47,8 @@ interface StoreValue {
   notify: (message: string) => void
   setTheme: (theme: ThemeName) => void
   setFontSize: (size: number) => void
+  setLineHeight: (lineHeight: number) => void
+  setFont: (font: ReaderFont) => void
   castVote: (episodeId: string, choiceId: string) => Promise<void>
   addComment: (input: { novelId: string; episodeId: string; author: string; text: string }) => Promise<void>
   toggleCommentLike: (commentId: string) => Promise<void>
@@ -116,7 +119,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.style.setProperty('--reader-font', `${settings.fontSize}px`)
-  }, [settings.fontSize])
+    document.documentElement.style.setProperty('--reader-line-height', String(settings.lineHeight))
+    document.documentElement.style.setProperty(
+      '--reader-font-family',
+      settings.font === 'sans' ? 'var(--font-sans)' : 'var(--font-serif)',
+    )
+  }, [settings.fontSize, settings.lineHeight, settings.font])
 
   const notify = useCallback((message: string) => {
     setToast(message)
@@ -139,6 +147,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const setFontSize = useCallback(
     (fontSize: number) => persistSettings({ ...settings, fontSize }),
+    [persistSettings, settings],
+  )
+
+  const setLineHeight = useCallback(
+    (lineHeight: number) => persistSettings({ ...settings, lineHeight }),
+    [persistSettings, settings],
+  )
+
+  const setFont = useCallback(
+    (font: ReaderFont) => persistSettings({ ...settings, font }),
     [persistSettings, settings],
   )
 
@@ -314,6 +332,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     notify,
     setTheme,
     setFontSize,
+    setLineHeight,
+    setFont,
     castVote,
     addComment,
     toggleCommentLike,

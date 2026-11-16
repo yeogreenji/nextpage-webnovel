@@ -18,5 +18,6 @@
     "useDefineForClassFields": true,
     "allowImportingTsExtensions": false
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["api"]
 }

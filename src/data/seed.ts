@@ -1,4 +1,8 @@
 import type { Comment, Episode, Novel } from '../types'
+import { buildExpansions } from './stories/expansions'
+import { buildRegress } from './stories/regress'
+import { buildAcademy } from './stories/academy'
+import { buildCafe } from './stories/cafe'
 
 export interface SeedData {
   novels: Novel[]
@@ -702,5 +706,27 @@ export function buildSeed(nowMs = Date.now()): SeedData {
     },
   ]
 
-  return { novels, episodes, comments }
+  /* ─────────────── 신작 3편 + 기존 작품 다음 회차 합치기 ─────────────── */
+  const regress = buildRegress(nowMs)
+  const academy = buildAcademy(nowMs)
+  const cafe = buildCafe(nowMs)
+  const expansions = buildExpansions(nowMs)
+
+  // 같은 id 의 노드는 새 내용(정식 연재)으로 덮어씁니다.
+  const overrides = new Map(expansions.episodes.map((episode) => [episode.id, episode]))
+  const baseIds = new Set(episodes.map((episode) => episode.id))
+
+  const allEpisodes: Episode[] = [
+    ...episodes.map((episode) => overrides.get(episode.id) ?? episode),
+    ...expansions.episodes.filter((episode) => !baseIds.has(episode.id)),
+    ...regress.episodes,
+    ...academy.episodes,
+    ...cafe.episodes,
+  ]
+
+  return {
+    novels: [...novels, regress.novel, academy.novel, cafe.novel],
+    episodes: allEpisodes,
+    comments: [...comments, ...expansions.comments, ...regress.comments, ...academy.comments, ...cafe.comments],
+  }
 }

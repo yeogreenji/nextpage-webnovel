@@ -33,6 +33,17 @@ export function AboutPage() {
       </section>
 
       <section className="card p-5 mt-4">
+        <h2 className="text-[15px] font-extrabold">소설로 쭉 읽기와 캐릭터 톡</h2>
+        <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+          회차 화면의 <b>📖 소설로 쭉 읽기</b> 버튼을 누르면 선택지 없이 내가 고른 분기가 한 편의
+          웹소설로 이어집니다. 작품 페이지의 <b>💬 캐릭터 톡</b>에서는 등장인물과 직접 대화할 수 있고,
+          인물은 작품 세계관과 내가 고른 선택지를 기억합니다. AI 키가 연결된 배포에서는 실시간
+          응답으로, 연결되지 않은 배포에서는 기기 안의 상황 응답으로 대화합니다. 캐릭터 톡의 대화
+          기록은 이 기기에만 저장되며, 대화 지우기 버튼으로 언제든 지울 수 있습니다.
+        </p>
+      </section>
+
+      <section className="card p-5 mt-4">
         <h2 className="text-[15px] font-extrabold">데이터는 어디에 저장되나요</h2>
         <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
           현재 버전은 서버 없이 동작합니다. 투표, 한 줄 댓글, 읽기 설정, 작가 스튜디오에서 발행한
