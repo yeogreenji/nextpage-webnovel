@@ -1,4 +1,9 @@
 import type { Character, Episode, Novel } from '../types'
+import {
+  EXPANSION_ART,
+  EXPANSION_CHOICE_ART,
+  EXPANSION_SCENES,
+} from './art-expansion'
 
 /**
  * 일러스트 자산 인덱스.
@@ -272,6 +277,7 @@ export const NOVEL_ART: Record<string, NovelArt> = {
       },
     ],
   },
+  ...EXPANSION_ART,
 }
 
 /** 선택지 id → 장면 일러스트 */
@@ -328,6 +334,7 @@ export const CHOICE_ART: Record<string, string> = {
   'ep-cafe-2b-b': 'images/scenes/story-cafe-1.jpg',
   'ep-cafe-3a-a': 'images/scenes/story-cafe-2.jpg',
   'ep-cafe-3a-b': 'images/covers/hero-cafe.jpg',
+  ...EXPANSION_CHOICE_ART,
 }
 
 export type { InlineScene } from '../types'
@@ -552,6 +559,7 @@ export const EPISODE_SCENES: Record<string, InlineScene[]> = {
       fallbackAfter: 18,
     },
   ],
+  ...EXPANSION_SCENES,
 }
 
 /** 문단 배열에 삽화 위치를 계산해 돌려줍니다. */

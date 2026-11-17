@@ -3,6 +3,15 @@ import { buildExpansions } from './stories/expansions'
 import { buildRegress } from './stories/regress'
 import { buildAcademy } from './stories/academy'
 import { buildCafe } from './stories/cafe'
+import { buildMarry } from './stories/marry'
+import { buildCampus } from './stories/campus'
+import { buildIdol } from './stories/idol'
+import { buildPalace } from './stories/palace'
+import { buildRival } from './stories/rival'
+import { buildMurim } from './stories/murim'
+import { buildMemory } from './stories/memory'
+import { buildLodge } from './stories/lodge'
+import { buildOccult } from './stories/occult'
 
 export interface SeedData {
   novels: Novel[]
@@ -712,6 +721,19 @@ export function buildSeed(nowMs = Date.now()): SeedData {
   const cafe = buildCafe(nowMs)
   const expansions = buildExpansions(nowMs)
 
+  /* ─────────────── 로맨스 5편 ─────────────── */
+  const marry = buildMarry(nowMs)
+  const campus = buildCampus(nowMs)
+  const idol = buildIdol(nowMs)
+  const palace = buildPalace(nowMs)
+  const rival = buildRival(nowMs)
+
+  /* ─────────────── 다장르 4편 ─────────────── */
+  const murim = buildMurim(nowMs)
+  const memory = buildMemory(nowMs)
+  const lodge = buildLodge(nowMs)
+  const occult = buildOccult(nowMs)
+
   // 같은 id 의 노드는 새 내용(정식 연재)으로 덮어씁니다.
   const overrides = new Map(expansions.episodes.map((episode) => [episode.id, episode]))
   const baseIds = new Set(episodes.map((episode) => episode.id))
@@ -722,11 +744,49 @@ export function buildSeed(nowMs = Date.now()): SeedData {
     ...regress.episodes,
     ...academy.episodes,
     ...cafe.episodes,
+    ...marry.episodes,
+    ...campus.episodes,
+    ...idol.episodes,
+    ...palace.episodes,
+    ...rival.episodes,
+    ...murim.episodes,
+    ...memory.episodes,
+    ...lodge.episodes,
+    ...occult.episodes,
   ]
 
   return {
-    novels: [...novels, regress.novel, academy.novel, cafe.novel],
+    novels: [
+      ...novels,
+      regress.novel,
+      academy.novel,
+      cafe.novel,
+      marry.novel,
+      campus.novel,
+      idol.novel,
+      palace.novel,
+      rival.novel,
+      murim.novel,
+      memory.novel,
+      lodge.novel,
+      occult.novel,
+    ],
     episodes: allEpisodes,
-    comments: [...comments, ...expansions.comments, ...regress.comments, ...academy.comments, ...cafe.comments],
+    comments: [
+      ...comments,
+      ...expansions.comments,
+      ...regress.comments,
+      ...academy.comments,
+      ...cafe.comments,
+      ...marry.comments,
+      ...campus.comments,
+      ...idol.comments,
+      ...palace.comments,
+      ...rival.comments,
+      ...murim.comments,
+      ...memory.comments,
+      ...lodge.comments,
+      ...occult.comments,
+    ],
   }
 }

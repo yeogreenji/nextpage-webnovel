@@ -98,8 +98,8 @@ export function AboutPage() {
           <code className="chip">public/images/</code> 아래에 있습니다.
         </p>
         <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-          지금 들어 있는 그림은 표지 3종과 키 비주얼 3종, 인물 카드 12인, 선택지 장면 16컷, 회차
-          본문에 끼워 넣는 삽화 9컷입니다. 본문 삽화는 줄거리의 결정적인 장면에서 한 번씩 크게
+          지금 들어 있는 그림은 표지 15종과 키 비주얼 15종, 인물 카드 60인, 선택지 장면과 회차
+          본문 삽화 70컷입니다. 본문 삽화는 줄거리의 결정적인 장면에서 한 번씩 크게
           펼쳐지고, 작품 페이지의 <b>명장면 일러스트 갤러리</b>에서 모아 볼 수 있습니다.
         </p>
         <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>

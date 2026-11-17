@@ -8,6 +8,7 @@ import { SceneGallery } from '../components/SceneGallery'
 import { formatNumber } from '../lib/format'
 import { novelParticipants, tallyVotes } from '../lib/vote'
 import { imageUrl, scenesForEpisodes } from '../data/art'
+import { GENRE_GROUPS, inGroup, novelGroup } from '../lib/genres'
 import type { Episode, Novel } from '../types'
 
 interface OpenVote {
@@ -60,13 +61,22 @@ export function HomePage() {
 
   const myVoteCount = votes.length
 
+  // 피드: 최신 작품부터, 대표 장르별로도 바로 들어갈 수 있게
+  const feed = [...novels].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  )
+  const groupCounts = GENRE_GROUPS.map((group) => ({
+    name: group.name,
+    count: novels.filter((novel) => inGroup(novel, group.name)).length,
+  })).filter((item) => item.count > 0)
+
   // 스포트라이트: 모든 작품의 인물을 한 줄로
   const spotlight = novels.flatMap((novel) =>
     (novel.characters ?? []).map((character) => ({
       character,
       novelId: novel.id,
       novelTitle: novel.title,
-      workLabel: novel.genres[0],
+      workLabel: novelGroup(novel),
     })),
   )
 
@@ -240,8 +250,20 @@ export function HomePage() {
           </Link>
         </div>
 
+        <div className="genre-tabs mb-4" aria-label="장르별로 보기">
+          {groupCounts.map((item) => (
+            <Link
+              key={item.name}
+              to={`/library?genre=${encodeURIComponent(item.name)}`}
+              className="genre-tab"
+            >
+              {item.name} <span style={{ opacity: 0.6 }}>{item.count}</span>
+            </Link>
+          ))}
+        </div>
+
         <div className="book-grid">
-          {novels.map((novel) => (
+          {feed.map((novel) => (
             <NovelCard
               key={novel.id}
               novel={novel}
