@@ -234,6 +234,23 @@ export function EpisodePage() {
       </div>
 
       <VotePanel novel={novel} episode={episode} />
+      {episode.choices.length === 0 && (
+        <section className="card mt-9 p-6 text-center">
+          <p className="eyebrow">End of route</p>
+          <h2 className="mt-1.5 text-[17px] font-extrabold">이 루트는 여기까지 이어집니다</h2>
+          <p className="mt-2 text-[12.5px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+            다른 선택으로 갈라진 이야기도 있습니다. 분기 지도에서 다른 길을 읽거나, 내가 고르는 인터랙티브로 한 편을 완성해 보세요.
+          </p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Link to={`/novel/${novel.id}/tree`} className="btn btn-secondary btn-sm">
+              분기 지도 보기
+            </Link>
+            <Link to={`/novel/${novel.id}/play`} className="btn btn-primary btn-sm">
+              내가 쓰는 소설로 완성하기
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* 하단 토글 — 투표 후에도 바로 정주행 모드로 */}
       <div className="story-entry-bar mt-5">

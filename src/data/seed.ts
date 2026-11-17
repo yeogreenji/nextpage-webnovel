@@ -12,6 +12,7 @@ import { buildMurim } from './stories/murim'
 import { buildMemory } from './stories/memory'
 import { buildLodge } from './stories/lodge'
 import { buildOccult } from './stories/occult'
+import { fillPending } from './stories/filled'
 
 export interface SeedData {
   novels: Novel[]
@@ -774,7 +775,7 @@ export function buildSeed(nowMs = Date.now()): SeedData {
   const overrides = new Map(expansions.episodes.map((episode) => [episode.id, episode]))
   const baseIds = new Set(episodes.map((episode) => episode.id))
 
-  const allEpisodes: Episode[] = [
+  const merged: Episode[] = [
     ...episodes.map((episode) => overrides.get(episode.id) ?? episode),
     ...expansions.episodes.filter((episode) => !baseIds.has(episode.id)),
     ...regress.episodes,
@@ -790,6 +791,7 @@ export function buildSeed(nowMs = Date.now()): SeedData {
     ...lodge.episodes,
     ...occult.episodes,
   ]
+  const allEpisodes = fillPending(merged, nowMs)
 
   return {
     novels: [
