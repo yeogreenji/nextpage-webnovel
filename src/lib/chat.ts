@@ -1,7 +1,17 @@
-import type { ChatMessage, Character, Episode, Novel, VoteRecord } from '../types'
+import type {
+  AppliedLine,
+  ChatMessage,
+  Character,
+  Episode,
+  Novel,
+  PlayPick,
+  PlayScene,
+  VoteRecord,
+} from '../types'
 import { describeChoices } from './story'
 
 const STORE_KEY = 'np.chat.v1'
+const SCENE_STORE_KEY = 'np.scenechat.v1'
 
 type ChatLog = Record<string, ChatMessage[]>
 
@@ -108,6 +118,124 @@ export function buildChatRequest(input: {
     history: history.slice(-8).map((item) => ({ role: item.role, text: item.text })),
     message,
   }
+}
+
+/* ─────────────── 장면(플레이) 중간 대화 ─────────────── */
+
+function readSceneLog(): ChatLog {
+  try {
+    const raw = window.localStorage.getItem(SCENE_STORE_KEY)
+    return raw ? (JSON.parse(raw) as ChatLog) : {}
+  } catch {
+    return {}
+  }
+}
+
+export function sceneChatKey(novelId: string, sceneId: string, characterId: string): string {
+  return `${novelId}::${sceneId}::${characterId}`
+}
+
+export function loadSceneMessages(
+  novelId: string,
+  sceneId: string,
+  characterId: string,
+): ChatMessage[] {
+  return readSceneLog()[sceneChatKey(novelId, sceneId, characterId)] ?? []
+}
+
+export function saveSceneMessages(
+  novelId: string,
+  sceneId: string,
+  characterId: string,
+  messages: ChatMessage[],
+): void {
+  try {
+    const log = readSceneLog()
+    log[sceneChatKey(novelId, sceneId, characterId)] = messages.slice(-30)
+    window.localStorage.setItem(SCENE_STORE_KEY, JSON.stringify(log))
+  } catch {
+    // 저장 공간이 없으면 대화는 화면에만 남습니다.
+  }
+}
+
+/**
+ * 장면 맥락을 담은 캐릭터 톡 요청.
+ * API 계약(api/chat)은 그대로 쓰고, 현재 장면·선택·적용한 대사를 episodeContext 로 넘깁니다.
+ */
+export function buildSceneChatRequest(input: {
+  novel: Novel
+  character: Character
+  scene: PlayScene
+  picks: PlayPick[]
+  applied: AppliedLine[]
+  message: string
+  history: ChatMessage[]
+}): ChatRequest {
+  const { novel, character, scene, picks, applied, message, history } = input
+  const lastPick = picks[picks.length - 1]
+  const choices = [
+    ...picks.map((pick, index) => `${index + 1}장면에서 “${pick.label}”를 골랐다`),
+    ...(lastPick ? [] : [`${scene.no}장면에서 아직 선택하지 않았다`]),
+    ...applied.map(
+      (line) => `소설에 넣은 대사 — ${line.characterName}: “${line.text.replace(/\n+/g, ' ')}”`,
+    ),
+  ]
+
+  return {
+    novel: {
+      id: novel.id,
+      title: novel.title,
+      synopsis: novel.synopsis,
+      genres: novel.genres,
+    },
+    character: {
+      name: character.name,
+      role: character.role,
+      tag: character.tag,
+      quote: character.quote,
+    },
+    episodeContext: {
+      current: {
+        no: scene.no,
+        title: `${scene.title} · ${scene.place}`,
+        excerpt: scene.body.join('\n').slice(0, 600),
+      },
+      choices,
+    },
+    history: history.slice(-8).map((item) => ({ role: item.role, text: item.text })),
+    message,
+  }
+}
+
+/** 장면 맥락을 반영한 오프라인 응답 (AI 키가 없을 때) */
+export function sceneOfflineReply(
+  character: Character,
+  message: string,
+  scene: PlayScene,
+  picks: PlayPick[],
+): string {
+  const text = message.trim()
+  const lastPick = picks[picks.length - 1]
+  const place = scene.place.split('·').pop()?.trim() ?? scene.place
+
+  const lines: string[] = []
+
+  if (text.includes('?') || /까$|니$|요\?$/.test(text)) {
+    lines.push(`“${text.replace(/\?+$/, '')}…”`)
+    lines.push(`${character.name}는 ${place}에서 잠깐 대답을 골랐다. “지금은, 제가 아는 것만 말할 수 있어요.”`)
+  } else if (text.length <= 12) {
+    lines.push(`“${text}”`)
+    lines.push(`짧은 말이 ${place}의 공기에 오래 남았다. ${character.name}는 고개를 끄덕였다.`)
+  } else {
+    lines.push(`${character.name}는 말을 들으며 손끝을 멈췄다. “그렇게 말해 주는 사람은, 처음이에요.”`)
+  }
+
+  if (lastPick) {
+    lines.push(`“${lastPick.label}” — 그 선택이 이 장면을 여기까지 데려왔어요.`)
+  }
+
+  lines.push(character.quote)
+  return lines.join('\n\n')
 }
 
 /**

@@ -1,23 +1,18 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
 import { NovelCard } from '../components/NovelCard'
-import { HeroBanner } from '../components/HeroBanner'
-import { Countdown } from '../components/Countdown'
+import { NovelCarousel } from '../components/NovelCarousel'
 import { CharacterSpotlight } from '../components/CharacterSpotlight'
 import { SceneGallery } from '../components/SceneGallery'
-import { formatNumber } from '../lib/format'
-import { novelParticipants, tallyVotes } from '../lib/vote'
 import { imageUrl, scenesForEpisodes } from '../data/art'
+import { ALL_FLOWS, flowFor } from '../data/flows'
+import { allSessions, progressOf } from '../lib/play'
 import { GENRE_GROUPS, inGroup, novelGroup } from '../lib/genres'
-import type { Episode, Novel } from '../types'
-
-interface OpenVote {
-  novel: Novel
-  episode: Episode
-}
 
 export function HomePage() {
   const { ready, novels, episodes, votes } = useStore()
+  const sessions = useMemo(() => allSessions(), [])
 
   if (!ready) {
     return (
@@ -28,38 +23,9 @@ export function HomePage() {
   }
 
   const published = episodes.filter((episode) => episode.status === 'published')
-  const totalParticipants = novels.reduce(
-    (sum, novel) =>
-      sum + novelParticipants(episodes.filter((episode) => episode.novelId === novel.id)),
-    0,
-  )
   const characterCount = novels.reduce((sum, novel) => sum + (novel.characters?.length ?? 0), 0)
-
-  const now = Date.now()
-  const openVotes: OpenVote[] = episodes
-    .filter(
-      (episode) =>
-        episode.status === 'published' &&
-        episode.choices.length > 0 &&
-        episode.voteClosesAt !== null &&
-        new Date(episode.voteClosesAt).getTime() > now,
-    )
-    .sort(
-      (a, b) =>
-        new Date(a.voteClosesAt as string).getTime() - new Date(b.voteClosesAt as string).getTime(),
-    )
-    .slice(0, 3)
-    .flatMap((episode) => {
-      const novel = novels.find((item) => item.id === episode.novelId)
-      return novel ? [{ novel, episode }] : []
-    })
-
-  const featured = openVotes[0]?.novel ?? novels[0]
-  const featuredEpisodes = featured
-    ? episodes.filter((episode) => episode.novelId === featured.id)
-    : []
-
-  const myVoteCount = votes.length
+  const sceneTotal = ALL_FLOWS.reduce((sum, flow) => sum + flow.scenes.length, 0)
+  const endingTotal = ALL_FLOWS.reduce((sum, flow) => sum + flow.endings.length, 0)
 
   // 피드: 최신 작품부터, 대표 장르별로도 바로 들어갈 수 있게
   const feed = [...novels].sort(
@@ -93,22 +59,35 @@ export function HomePage() {
       href: `/novel/${episode.novelId}/ep/${episode.id}`,
     }))
 
+  // 내가 쓰던 소설 (이 기기 기준)
+  const inProgress = novels
+    .map((novel) => {
+      const flow = flowFor(novel.id)
+      const session = sessions[novel.id]
+      const progress = progressOf(flow, session ?? null)
+      return { novel, flow, progress }
+    })
+    .filter((item) => item.flow && item.progress.done > 0)
+    .sort((a, b) => Number(a.progress.complete) - Number(b.progress.complete))
+    .slice(0, 3)
+
   return (
-    <div className="page-shell pt-6 pb-4">
-      {featured && (
-        <HeroBanner
-          novel={featured}
-          episodes={featuredEpisodes.length > 0 ? featuredEpisodes : episodes}
-        />
-      )}
+    <div className="page-shell pt-5 pb-4">
+      {/* 🎞 최상단 작품 선택 슬라이드 */}
+      <NovelCarousel
+        novels={novels}
+        publishedCount={(novelId) =>
+          episodes.filter((episode) => episode.novelId === novelId && episode.status === 'published').length
+        }
+      />
 
       {/* 요약 지표 */}
-      <dl className="stat-bar">
+      <dl className="stat-bar mt-6">
         {[
-          { label: '연재 작품', value: `${novels.length}편` },
-          { label: '공개 회차', value: `${published.length}화` },
+          { label: '작품', value: `${novels.length}편` },
+          { label: '양자택일 장면', value: `${sceneTotal}개` },
+          { label: '도달 가능한 엔딩', value: `${endingTotal}개` },
           { label: '등장인물', value: `${characterCount}인` },
-          { label: '누적 참여', value: `${formatNumber(totalParticipants)}명` },
         ].map((stat) => (
           <div key={stat.label}>
             <dt>{stat.label}</dt>
@@ -117,102 +96,46 @@ export function HomePage() {
         ))}
       </dl>
 
-      {myVoteCount > 0 && (
-        <p className="mt-3 text-[12px]" style={{ color: 'var(--accent-strong)' }}>
-          이 기기에서 {myVoteCount}번 선택했습니다. 남은 루트도 읽어 보세요.
-        </p>
-      )}
-
-      {/* ✨ 캐릭터 스포트라이트 */}
-      <div className="mt-11">
-        <CharacterSpotlight items={spotlight} />
-      </div>
-
-      {/* 마감 임박 투표 */}
-      {openVotes.length > 0 && (
+      {/* 이어 쓰던 소설 */}
+      {inProgress.length > 0 && (
         <section className="mt-11">
           <div className="section-head">
             <div>
-              <p className="eyebrow">Live · 마감 순</p>
-              <h2 className="section-title">지금 투표 중</h2>
+              <p className="eyebrow">Continue</p>
+              <h2 className="section-title">이어 쓰던 소설</h2>
+              <p className="mt-1.5 text-[12px]" style={{ color: 'var(--ink-mute)' }}>
+                고르던 자리에서 바로 이어집니다. 선택도 대사도 이 기기에 저장되어 있어요.
+              </p>
             </div>
-            <span className="text-[11.5px]" style={{ color: 'var(--ink-mute)' }}>
-              한 회차에 한 표
-            </span>
+            <span className="chip chip-accent">{inProgress.length}편</span>
           </div>
 
-          <div className="live-list">
-            {openVotes.map(({ novel, episode }) => {
-              const tally = tallyVotes(episode, votes)
-              const [a, b] = episode.choices
-              const pa = a ? tally.percents[a.id] ?? 0 : 0
-              const pb = b ? tally.percents[b.id] ?? 0 : 0
-              const myVote = votes.find((vote) => vote.episodeId === episode.id)
-              const scene = imageUrl(a?.image ?? episode.choices[0]?.image)
+          <div className="resume-grid">
+            {inProgress.map(({ novel, progress }) => {
+              const cover = imageUrl(novel.coverImage)
               return (
-                <Link
-                  key={episode.id}
-                  to={`/novel/${novel.id}/ep/${episode.id}#vote`}
-                  className="live-row"
-                >
-                  <span className="live-thumb">
-                    {scene ? (
-                      <img src={scene} alt="" loading="lazy" decoding="async" />
+                <Link key={novel.id} to={`/novel/${novel.id}/play`} className="resume-card">
+                  <span className="resume-cover">
+                    {cover ? (
+                      <img src={cover} alt="" loading="lazy" />
                     ) : (
                       <span
-                        className="absolute inset-0"
+                        aria-hidden
                         style={{
                           backgroundImage: `linear-gradient(150deg, ${novel.cover.from}, ${novel.cover.to})`,
                         }}
                       />
                     )}
-                    <span className="pill pill-live absolute left-1.5 top-1.5">LIVE</span>
                   </span>
-
-                  <span className="live-body">
-                    <span className="flex items-center gap-1.5 min-w-0">
-                      <span
-                        className="text-[10.5px] font-bold truncate"
-                        style={{ color: 'var(--ink-mute)' }}
-                      >
-                        {novel.title}
-                      </span>
-                      {myVote && (
-                        <span className="pill pill-dday shrink-0" style={{ padding: '1px 6px' }}>
-                          참여 완료
-                        </span>
-                      )}
+                  <span className="resume-body">
+                    <span className="resume-title">{novel.title}</span>
+                    <span className="resume-progress" aria-hidden>
+                      <span style={{ width: `${progress.percent}%` }} />
                     </span>
-                    <span className="live-title">
-                      {episode.no}화 · {episode.title}
-                    </span>
-
-                    <span className="live-split" aria-hidden>
-                      <span className="a" style={{ width: `${pa}%` }} />
-                      <span className="b" style={{ width: `${pb}%` }} />
-                    </span>
-                    <span className="flex items-center gap-2 text-[10.5px]" style={{ color: 'var(--ink-mute)' }}>
-                      <span className="shrink-0">
-                        <b style={{ color: 'var(--vs-a)' }}>A</b> {pa}%
-                        <span className="mx-1 opacity-50">·</span>
-                        <b style={{ color: 'var(--vs-b)' }}>B</b> {pb}%
-                      </span>
-                      <span className="inline-flex items-center gap-1 sm:hidden">
-                        <span className="opacity-50">·</span>
-                        <Countdown closesAt={episode.voteClosesAt} className="text-[10.5px]" />
-                      </span>
-                    </span>
-                  </span>
-
-                  <span className="shrink-0 self-center text-right flex flex-col items-end gap-1.5 live-meta-right">
-                    <span className="chip hidden text-[10.5px] sm:inline-flex">
-                      <Countdown closesAt={episode.voteClosesAt} className="text-[10.5px]" />
-                    </span>
-                    <span
-                      className="live-count text-[10.5px] tabular-nums"
-                      style={{ color: 'var(--ink-mute)' }}
-                    >
-                      {formatNumber(tally.total)}명 참여
+                    <span className="resume-meta">
+                      {progress.complete
+                        ? `완성 · 엔딩 확인하기`
+                        : `${progress.done} / ${progress.total} 선택 · 이어 쓰기 →`}
                     </span>
                   </span>
                 </Link>
@@ -222,6 +145,11 @@ export function HomePage() {
         </section>
       )}
 
+      {/* ✨ 캐릭터 스포트라이트 */}
+      <div className="mt-11">
+        <CharacterSpotlight items={spotlight} />
+      </div>
+
       {/* 🎨 명장면 갤러리 */}
       {sceneRail.length > 0 && (
         <section className="mt-11">
@@ -230,7 +158,7 @@ export function HomePage() {
               <p className="eyebrow">Scene Gallery</p>
               <h2 className="section-title">🎨 명장면 일러스트</h2>
               <p className="mt-1.5 text-[12px]" style={{ color: 'var(--ink-mute)' }}>
-                회차 본문에 들어간 삽화입니다. 눌러서 크게 보고, 그 장면으로 바로 들어가세요.
+                장면마다 붙는 삽화입니다. 눌러서 크게 보고, 그 장면의 회차로 바로 들어가세요.
               </p>
             </div>
           </div>
@@ -244,6 +172,9 @@ export function HomePage() {
           <div>
             <p className="eyebrow">Feed · 표지 갤러리</p>
             <h2 className="section-title">연재 중인 작품</h2>
+            <p className="mt-1.5 text-[12px]" style={{ color: 'var(--ink-mute)' }}>
+              모든 작품이 여섯 번의 양자택일과 세 개의 엔딩으로 이어집니다.
+            </p>
           </div>
           <Link to="/library" className="text-[12px] font-bold" style={{ color: 'var(--accent)' }}>
             전체 보기 →
@@ -278,25 +209,25 @@ export function HomePage() {
         <div className="section-head">
           <div>
             <p className="eyebrow">How it works</p>
-            <h2 className="section-title">세 단계면 충분합니다</h2>
+            <h2 className="section-title">고르고, 말 걸고, 완성합니다</h2>
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
             {
               step: '01',
-              title: '회차를 읽는다',
-              body: '작품을 골라 1화부터 읽습니다. 글자 크기와 배경은 취향대로 바꿀 수 있습니다.',
+              title: '장면마다 A/B를 고른다',
+              body: '한 작품에 양자택일이 여섯 번. 고른 즉시 그 결과가 본문에 붙고, 다음 장면이 열립니다.',
             },
             {
               step: '02',
-              title: 'A/B를 고른다',
-              body: '회차 끝에서 두 갈래 중 하나를 선택합니다. 마감 전까지 한 번만 참여할 수 있습니다.',
+              title: '장면 속 인물과 대화한다',
+              body: '읽는 중간에 그 장면의 인물과 대화하세요. 마음에 드는 대사는 「소설에 적용」으로 본문에 들어갑니다.',
             },
             {
               step: '03',
-              title: '결과를 본다',
-              body: '즉시 비율이 공개됩니다. 다수파가 고른 루트로 다음 화가 이어지고, 결과 카드는 스토리로 공유할 수 있습니다.',
+              title: '내 소설로 완성해 읽는다',
+              body: '마지막 선택까지 마치면, 내 분기와 내가 넣은 대사가 한 편의 소설로 묶입니다. 엔딩은 세 개.',
             },
           ].map((item) => (
             <div key={item.step} className="card p-5">
@@ -326,10 +257,11 @@ export function HomePage() {
               Next Page
             </p>
             <h2 className="mt-2 text-[21px] sm:text-[25px] font-extrabold leading-snug tracking-tight">
-              다음 화는, 당신이 고른다
+              이 소설의 다음 문장은, 내가 쓴다
             </h2>
             <p className="mt-2 text-[12.5px] opacity-80">
-              읽고, 고르고, 결과를 공유하세요. 모든 작품은 회차마다 갈라집니다.
+              고르고, 대화하고, 완성하세요. {novels.length}편 모두 여섯 번의 선택과 세 개의 엔딩으로
+              이어집니다.
             </p>
           </div>
           <div className="relative z-[2] flex flex-wrap gap-2">
@@ -342,6 +274,13 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {votes.length > 0 && (
+        <p className="mt-6 text-[11.5px]" style={{ color: 'var(--ink-mute)' }}>
+          예전 회차에서 남긴 선택 {votes.length}개도 그대로 남아 있어요. 작품 화면에서 다시 볼 수
+          있습니다.
+        </p>
+      )}
     </div>
   )
 }

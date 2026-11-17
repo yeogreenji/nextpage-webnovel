@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
+import { allSessions } from '../lib/play'
 import type { ThemeName } from '../types'
 
 const NAV = [
@@ -14,7 +15,8 @@ const THEME_ORDER: ThemeName[] = ['light', 'sepia', 'dark']
 const THEME_LABEL: Record<ThemeName, string> = { light: '라이트', sepia: '세피아', dark: '다크' }
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { settings, setTheme, votes, toast } = useStore()
+  const { settings, setTheme, toast } = useStore()
+  const startedCount = Object.values(allSessions()).filter((session) => session.picks.length > 0).length
 
   return (
     <div className="min-h-dvh flex flex-col">
@@ -42,9 +44,13 @@ export function Layout({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-2">
-            <span className="chip hidden sm:inline-flex" title="이 기기에서 참여한 투표 수">
-              내 투표 {votes.length}
-            </span>
+            <Link
+              to="/library"
+              className="chip hidden sm:inline-flex"
+              title="이 기기에서 쓰기 시작한 소설 수"
+            >
+              내 소설 {startedCount}
+            </Link>
             <div className="hidden md:flex segmented">
               {THEME_ORDER.map((theme) => (
                 <button
@@ -81,8 +87,8 @@ export function Layout({ children }: { children: ReactNode }) {
           </p>
           <p>
             수록된 작품·인물·필명은 모두 가상이며, 표지·인물·장면 일러스트도 AI로 생성한 가상의
-            이미지입니다. 투표와 댓글은 이 기기에만 저장되며, 서버를 연결하면 여러 독자가 같은
-            이야기를 함께 고를 수 있습니다.
+            이미지입니다. 내가 고른 분기·소설에 넣은 대사·댓글은 이 기기에만 저장되며, 서버를
+            연결하면 다른 독자의 루트와도 이어갈 수 있습니다.
           </p>
           <p>
             React · TypeScript · Vite · Tailwind CSS로 만들었습니다. ·{' '}

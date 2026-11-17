@@ -6,9 +6,11 @@ import { CharacterStrip } from '../components/CharacterStrip'
 import { SceneGallery } from '../components/SceneGallery'
 import { Countdown } from '../components/Countdown'
 import { CharacterTalkSection } from '../components/CharacterTalkSection'
-import { formatNumber, formatRelative } from '../lib/format'
-import { novelParticipants, tallyVotes } from '../lib/vote'
+import { formatRelative } from '../lib/format'
+import { tallyVotes } from '../lib/vote'
 import { imageUrl, scenesForEpisodes } from '../data/art'
+import { flowFor } from '../data/flows'
+import { allSessions, progressOf } from '../lib/play'
 import type { Episode } from '../types'
 
 export function NovelPage() {
@@ -59,7 +61,9 @@ export function NovelPage() {
     )
   }
 
-  const participants = novelParticipants(episodesOfNovel)
+  const flow = flowFor(novel.id)
+  const playSession = allSessions()[novel.id]
+  const playProgress = progressOf(flow, playSession ?? null)
   const first = published.find((item) => item.id === novel.startEpisodeId) ?? published[0]
   const cover = imageUrl(novel.coverImage)
   const characters = novel.characters ?? []
@@ -134,8 +138,16 @@ export function NovelPage() {
                 </dd>
               </div>
               <div>
-                <dt style={{ color: 'rgba(255,250,247,0.5)' }}>누적 참여</dt>
-                <dd className="mt-0.5 font-extrabold text-[15px]">{formatNumber(participants)}명</dd>
+                <dt style={{ color: 'rgba(255,250,247,0.5)' }}>양자택일</dt>
+                <dd className="mt-0.5 font-extrabold text-[15px]">
+                  {flow ? `${flow.scenes.length}번` : '-'}
+                </dd>
+              </div>
+              <div>
+                <dt style={{ color: 'rgba(255,250,247,0.5)' }}>엔딩</dt>
+                <dd className="mt-0.5 font-extrabold text-[15px]">
+                  {flow ? `${flow.endings.length}개` : '-'}
+                </dd>
               </div>
               <div>
                 <dt style={{ color: 'rgba(255,250,247,0.5)' }}>최근 업데이트</dt>
@@ -148,8 +160,17 @@ export function NovelPage() {
             </dl>
 
             <div className="mt-5 flex flex-wrap gap-2">
+              {flow && (
+                <Link to={`/novel/${novel.id}/play`} className="btn btn-light">
+                  {playProgress.complete
+                    ? '내가 완성한 소설 읽기 →'
+                    : playProgress.done > 0
+                      ? `이어서 쓰기 (${playProgress.done}/${playProgress.total}) →`
+                      : '이 소설 시작하기 →'}
+                </Link>
+              )}
               {first && (
-                <Link to={`/novel/${novel.id}/ep/${first.id}`} className="btn btn-light">
+                <Link to={`/novel/${novel.id}/ep/${first.id}`} className="btn btn-glass">
                   1화부터 읽기
                 </Link>
               )}

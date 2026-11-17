@@ -131,6 +131,89 @@ export interface ChatMessage {
   source?: 'ai' | 'offline'
 }
 
+/* ─────────────────── 인터랙티브 소설 (내가 쓰는 소설) ─────────────────── */
+
+/** 장면 끝에서 독자가 고르는 양자택일 */
+export interface PlayChoice {
+  id: string
+  /** 선택지 문구 — 소설의 문장처럼 적습니다 (예: '사물함 앞에서 그를 기다린다') */
+  label: string
+  /** 선택지 부연 — 무엇이 달라지는지 한 줄 */
+  hint: string
+  /** 고른 직후 본문에 바로 붙는 결과 문단. 이 문장이 소설이 됩니다. */
+  result: string[]
+  /** 선택의 결 — 마지막에 도달할 엔딩을 가릅니다 */
+  tone: 'A' | 'B'
+}
+
+/** 한 장면 = 한 번의 양자택일 */
+export interface PlayScene {
+  id: string
+  /** 장면 번호 (1부터). 화면에는 '1장'으로 표시 */
+  no: number
+  title: string
+  /** 장면 위에 붙는 위치·시간 한 줄 */
+  place: string
+  /** 본문 문단 */
+  body: string[]
+  /** 정확히 두 개의 양자택일 */
+  choices: PlayChoice[]
+  /** 이 장면에서 대화할 인물 id (novel.characters 기준) */
+  speakerId: string
+  /** 장면 일러스트 (public 기준 경로) */
+  image?: string
+}
+
+/** 완성된 소설이 도달하는 엔딩 */
+export interface PlayEnding {
+  id: string
+  name: string
+  kicker: string
+  body: string[]
+  /** 어떤 결의 선택이 모였을 때 닿는 엔딩인지 (mixed = 반반) */
+  tone: 'A' | 'B' | 'mixed'
+}
+
+/** 한 작품의 인터랙티브 흐름 */
+export interface StoryFlow {
+  novelId: string
+  /** 예: '여섯 번의 선택, 세 개의 엔딩' */
+  structure: string
+  scenes: PlayScene[]
+  endings: PlayEnding[]
+}
+
+/** 독자가 고른 선택 한 번 */
+export interface PlayPick {
+  sceneId: string
+  choiceId: string
+  label: string
+  tone: 'A' | 'B'
+  at: string
+}
+
+/** 채팅에서 소설로 옮긴 대사 */
+export interface AppliedLine {
+  id: string
+  sceneId: string
+  characterId: string
+  characterName: string
+  /** 캐릭터가 한 말 / 독자가 건넨 말 */
+  kind: 'character' | 'user'
+  text: string
+  at: string
+}
+
+/** 이 기기에 저장되는 플레이 진행 */
+export interface PlaySession {
+  novelId: string
+  picks: PlayPick[]
+  applied: AppliedLine[]
+  updatedAt: string
+  /** 마지막 양자택일까지 마친 시각 */
+  endedAt: string | null
+}
+
 /** 화면에서 쓰는 집계 결과 */
 export interface VoteTally {
   total: number

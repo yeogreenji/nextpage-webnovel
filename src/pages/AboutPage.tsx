@@ -9,31 +9,38 @@ export function AboutPage() {
       <p className="eyebrow">About</p>
       <h1 className="text-[24px] font-extrabold mt-1 tracking-tight">넥스트페이지 운영 안내</h1>
       <p className="mt-3 text-[13.5px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-        넥스트페이지는 회차마다 독자가 두 갈래 중 하나를 고르고, 다수가 고른 방향으로 이야기가
-        이어지는 선택형 웹소설 플랫폼입니다. 필명으로 연재하는 작가와, 다음 화를 직접 고르고 싶은
-        독자를 위해 만들었습니다.
+        넥스트페이지는 <b>내가 선택하는 대로 소설이 완성되는</b> 인터랙티브 웹소설 플랫폼입니다.
+        작품마다 여섯 번의 양자택일과 세 개의 엔딩이 있고, 고른 문장이 곧 소설이 됩니다. 마지막에는
+        내가 고른 분기와 내가 넣은 대사만으로 이뤄진 한 편의 소설을 읽습니다.
       </p>
 
       <section className="card p-5 mt-6">
-        <h2 className="text-[15px] font-extrabold">이야기가 이어지는 방식</h2>
+        <h2 className="text-[15px] font-extrabold">내가 선택하는 대로 완성되는 소설</h2>
         <ol className="mt-3 grid gap-2.5 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
           <li>
-            <b>1.</b> 회차 끝에서 A/B 선택지가 열립니다. 마감 전까지 한 번 참여할 수 있습니다.
+            <b>1.</b> 장면이 끝날 때마다 A/B 양자택일이 열립니다. 한 작품에 여섯 번.
           </li>
           <li>
-            <b>2.</b> 투표 즉시 선택지별 비율과 내가 다수파인지 소수파인지 보여 줍니다.
+            <b>2.</b> 고르는 즉시 그 결과가 본문에 붙고 다음 장면이 열립니다. 한 편의 소설이 그렇게
+            쌓입니다.
           </li>
           <li>
-            <b>3.</b> 다수파 루트의 다음 화가 정식 연재로 이어지고, 미채택 루트도 읽을 수 있습니다.
+            <b>3.</b> 장면 중간에 등장인물과 대화할 수 있고, 마음에 드는 대사는 「이 대사 소설에
+            적용」으로 본문에 대화 블록으로 들어갑니다.
           </li>
           <li>
-            <b>4.</b> 결과는 1080×1920 스토리 카드 이미지로 저장하거나 복사해 공유할 수 있습니다.
+            <b>4.</b> 마지막 선택까지 마치면 내 선택의 결에 따라 세 개의 엔딩 중 하나에 도달합니다.
+            반반으로 고르면 세 번째 엔딩이 열립니다.
+          </li>
+          <li>
+            <b>5.</b> 「내가 완성한 소설 읽기」에서 선택한 분기·넣은 대사·엔딩이 버튼 없이 한 편으로
+            이어집니다. 다른 선택지로 다시 써 보거나 처음부터 다시 읽을 수 있습니다.
           </li>
         </ol>
       </section>
 
       <section className="card p-5 mt-4">
-        <h2 className="text-[15px] font-extrabold">소설로 쭉 읽기와 캐릭터 톡</h2>
+        <h2 className="text-[15px] font-extrabold">회차 읽기와 캐릭터 톡</h2>
         <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
           회차 화면의 <b>📖 소설로 쭉 읽기</b> 버튼을 누르면 선택지 없이 내가 고른 분기가 한 편의
           웹소설로 이어집니다. 작품 페이지의 <b>💬 캐릭터 톡</b>에서는 등장인물과 직접 대화할 수 있고,
@@ -46,9 +53,10 @@ export function AboutPage() {
       <section className="card p-5 mt-4">
         <h2 className="text-[15px] font-extrabold">데이터는 어디에 저장되나요</h2>
         <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-          현재 버전은 서버 없이 동작합니다. 투표, 한 줄 댓글, 읽기 설정, 작가 스튜디오에서 발행한
-          회차가 모두 <b>이 브라우저(이 기기)</b>에만 저장됩니다. 다른 사람의 투표와는 아직
-          연결되지 않으며, 브라우저 저장소를 지우면 기록도 함께 사라집니다.
+          현재 버전은 서버 없이 동작합니다. 내가 고른 분기, 소설에 넣은 대사, 한 줄 댓글, 읽기 설정,
+          작가 스튜디오에서 발행한 회차가 모두 <b>이 브라우저(이 기기)</b>에만 저장됩니다. 캐릭터 톡의
+          AI 응답만 배포에 연결된 키로 실시간 생성됩니다. 브라우저 저장소를 지우면 기록도 함께
+          사라집니다.
         </p>
         <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
           여러 독자가 같은 집계를 함께 보려면 Supabase 같은 백엔드를 붙이면 됩니다. 저장소 계층을

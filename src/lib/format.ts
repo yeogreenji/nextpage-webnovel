@@ -73,3 +73,17 @@ export function readingMinutes(text: string): number {
   const chars = text.replace(/\s/g, '').length
   return Math.max(1, Math.round(chars / 500))
 }
+
+/**
+ * 이름 뒤에 붙는 '와/과' 조사 — 받침 유무로 고릅니다.
+ * 예) 유나와 대화 / 정한결과 대화
+ */
+export function withAndParticle(name: string): string {
+  const trimmed = name.trim()
+  const last = trimmed.slice(-1)
+  const code = last.charCodeAt(0)
+  if (code >= 0xac00 && code <= 0xd7a3) {
+    return (code - 0xac00) % 28 > 0 ? `${trimmed}과` : `${trimmed}와`
+  }
+  return `${trimmed}와(과)`
+}

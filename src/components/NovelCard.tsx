@@ -1,29 +1,26 @@
 import { Link } from 'react-router-dom'
 import type { Episode, Novel } from '../types'
-import { Countdown } from './Countdown'
-import { formatDday, formatNumber } from '../lib/format'
-import { novelParticipants, nextOpenVote, tallyVotes } from '../lib/vote'
-import { useStore } from '../store/StoreProvider'
+import { formatNumber } from '../lib/format'
+import { novelParticipants } from '../lib/vote'
 import { imageUrl } from '../data/art'
+import { flowFor } from '../data/flows'
+import { allSessions, progressOf } from '../lib/play'
 
 export function NovelCard({ novel, episodes }: { novel: Novel; episodes: Episode[] }) {
-  const { votes } = useStore()
   const published = episodes.filter((episode) => episode.status === 'published')
   const current = published.reduce<Episode | null>(
     (latest, episode) => (!latest || episode.no > latest.no ? episode : latest),
     null,
   )
-  const openVote = nextOpenVote(episodes)
   const participants = novelParticipants(episodes)
-  const myVoted = episodes.filter((episode) => votes.some((vote) => vote.episodeId === episode.id)).length
-  const leading = openVote ? tallyVotes(openVote, votes) : null
-  const dday = openVote ? formatDday(openVote.voteClosesAt) : null
   const cover = imageUrl(novel.coverImage)
-  const hot = openVote !== null && (leading?.total ?? 0) > 1200
+  const flow = flowFor(novel.id)
+  const session = allSessions()[novel.id]
+  const progress = progressOf(flow, session ?? null)
 
   return (
     <article className="book-card">
-      <Link to={`/novel/${novel.id}`} className="flex flex-col h-full">
+      <Link to={`/novel/${novel.id}/play`} className="flex flex-col h-full">
         <div className="book-cover">
           {cover ? (
             <img src={cover} alt={`${novel.title} 표지 일러스트`} loading="lazy" decoding="async" />
@@ -37,9 +34,13 @@ export function NovelCard({ novel, episodes }: { novel: Novel; episodes: Episode
           )}
           <div className="book-cover-scrim" />
           <div className="book-badges">
-            {openVote && <span className="pill pill-live">● LIVE</span>}
-            {hot && <span className="pill pill-hot">HOT</span>}
-            {dday && <span className="pill pill-dday">{dday}</span>}
+            {flow && <span className="pill pill-hot">선택형</span>}
+            {progress.complete && <span className="pill pill-dday">완성함</span>}
+            {progress.done > 0 && !progress.complete && (
+              <span className="pill pill-live">
+                {progress.done}/{progress.total}
+              </span>
+            )}
           </div>
           <div className="book-cover-foot">
             <span className="truncate">{novel.penName}</span>
@@ -66,33 +67,35 @@ export function NovelCard({ novel, episodes }: { novel: Novel; episodes: Episode
             <span>참여 {formatNumber(participants)}명</span>
             <span aria-hidden>·</span>
             <span>{published.length}화 연재</span>
-            {myVoted > 0 && (
+            {flow && (
               <>
                 <span aria-hidden>·</span>
-                <span style={{ color: 'var(--accent)' }} className="font-bold">
-                  내 선택 {myVoted}
-                </span>
+                <span>엔딩 {flow.endings.length}개</span>
               </>
             )}
           </div>
 
-          {openVote ? (
-            <div className="book-vote" data-live="true">
-              <span className="min-w-0 flex flex-col gap-0.5">
-                <span className="truncate">
-                  {openVote.no}화 투표 · 1위 {leading?.percents[leading.leaderId ?? ''] ?? 0}%
+          <div className="book-vote" data-live={flow ? 'true' : undefined}>
+            <span className="min-w-0 flex flex-col gap-0.5">
+              {flow ? (
+                <>
+                  <span className="truncate">
+                    {progress.done > 0
+                      ? `${progress.done} / ${progress.total} 선택 — 이어 쓰기`
+                      : `${flow.scenes.length}번의 선택으로 내 소설 쓰기`}
+                  </span>
+                  <span className="text-[10.5px]" style={{ color: 'var(--ink-mute)' }}>
+                    {flow.structure}
+                  </span>
+                </>
+              ) : (
+                <span className="truncate" style={{ color: 'var(--ink-mute)' }}>
+                  {current ? `${current.no}화 공개 완료` : '곧 공개됩니다'}
                 </span>
-                <Countdown closesAt={openVote.voteClosesAt} className="text-[10.5px]" />
-              </span>
-              <span className="shrink-0 font-extrabold">→</span>
-            </div>
-          ) : (
-            <div className="book-vote">
-              <span className="truncate" style={{ color: 'var(--ink-mute)' }}>
-                {current ? `${current.no}화 공개 완료` : '곧 공개됩니다'}
-              </span>
-            </div>
-          )}
+              )}
+            </span>
+            <span className="shrink-0 font-extrabold">→</span>
+          </div>
         </div>
       </Link>
     </article>

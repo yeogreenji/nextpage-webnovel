@@ -18,6 +18,7 @@ import type {
   VoteRecord,
 } from '../types'
 import { DEFAULT_SETTINGS, getRepository } from '../lib/repository'
+import { clearAllSessions } from '../lib/play'
 
 export interface EpisodeDraft {
   title: string
@@ -310,6 +311,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const resetAll = useCallback(async () => {
     await repository.reset()
+    clearAllSessions()
     const snapshot = await repository.load()
     setNovels(snapshot.novels)
     setEpisodes(snapshot.episodes)
