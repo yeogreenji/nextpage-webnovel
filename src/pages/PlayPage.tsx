@@ -11,6 +11,7 @@ import type { AppliedLine, PlayChoice, PlayScene, PlaySession } from '../types'
 import {
   addAppliedLine,
   appliedFor,
+  leadOf,
   clearSession,
   emptySession,
   ensureSession,
@@ -282,6 +283,9 @@ export function PlayPage() {
               )}
 
               <div className="play-prose reader-body">
+                {leadOf(flow, activeSession, sceneIndex).map((paragraph, index) => (
+                  <p key={`lead-${index}`}>{paragraph}</p>
+                ))}
                 {scene.body.map((paragraph, index) => (
                   <p key={index}>{paragraph}</p>
                 ))}

@@ -1,4 +1,5 @@
 import type { StoryFlow } from '../../types'
+import { applyPatches } from './patches'
 import { campusFlow, marryFlow, officeFlow } from './romance-core'
 import { idolFlow, palaceFlow, rivalFlow } from './romance-stage'
 import { academyFlow, contractFlow, regressFlow } from './fantasy'
@@ -10,7 +11,7 @@ import { lodgeFlow, occultFlow, parcelFlow } from './thriller'
  * — 작품마다 여섯 번의 양자택일, 세 개의 엔딩.
  * — 마지막 선택까지 마치면 '내가 완성한 소설'로 한 편이 됩니다.
  */
-export const ALL_FLOWS: StoryFlow[] = [
+const BASE_FLOWS: StoryFlow[] = [
   officeFlow,
   campusFlow,
   marryFlow,
@@ -27,6 +28,8 @@ export const ALL_FLOWS: StoryFlow[] = [
   lodgeFlow,
   occultFlow,
 ]
+
+export const ALL_FLOWS: StoryFlow[] = BASE_FLOWS.map(applyPatches)
 
 const FLOW_MAP: Record<string, StoryFlow> = Object.fromEntries(
   ALL_FLOWS.map((flow) => [flow.novelId, flow]),

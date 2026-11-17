@@ -156,6 +156,11 @@ export interface PlayScene {
   place: string
   /** 본문 문단 */
   body: string[]
+  /**
+   * 직전 장면에서 고른 결(A/B)에 따라 본문 앞에 붙는 이음 문단.
+   * 앞선 선택의 결과가 이 장면의 첫머리에서 이어지도록 합니다.
+   */
+  lead?: { A: string[]; B: string[] }
   /** 정확히 두 개의 양자택일 */
   choices: PlayChoice[]
   /** 이 장면에서 대화할 인물 id (novel.characters 기준) */

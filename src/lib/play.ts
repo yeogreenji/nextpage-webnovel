@@ -185,6 +185,15 @@ export function resolveEnding(flow: StoryFlow, session: PlaySession): PlayEnding
   return found ?? flow.endings[0] ?? null
 }
 
+/** n번째 장면(0-based) 앞에 붙는 이음 문단 — 직전 선택의 결에 따라 달라집니다. */
+export function leadOf(flow: StoryFlow, session: PlaySession, sceneIndex: number): string[] {
+  if (sceneIndex <= 0) return []
+  const tone = session.picks[sceneIndex - 1]?.tone
+  const scene = flow.scenes[sceneIndex]
+  if (!tone || !scene?.lead) return []
+  return scene.lead[tone] ?? []
+}
+
 export function appliedFor(session: PlaySession, sceneId: string): AppliedLine[] {
   return session.applied.filter((line) => line.sceneId === sceneId)
 }
@@ -267,6 +276,7 @@ export function buildFinale(flow: StoryFlow, session: PlaySession): FinaleNovel 
     const choice = scene.choices.find((item) => item.id === pick?.choiceId)
     const blocks: FinaleBlock[] = []
 
+    leadOf(flow, session, index).forEach((text) => blocks.push({ kind: 'p', text }))
     scene.body.forEach((text) => blocks.push({ kind: 'p', text }))
 
     appliedFor(session, scene.id).forEach((line) => {
