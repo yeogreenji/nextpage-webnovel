@@ -3874,6 +3874,35 @@ body {
   object-fit: cover;
   object-position: center 30%;
 }
+.play-scene-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 14px 0 0;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+}
+.play-scene-card img {
+  width: 64px;
+  height: 80px;
+  flex: none;
+  border-radius: 10px;
+  object-fit: cover;
+  object-position: center 20%;
+}
+.play-scene-card-who {
+  margin: 2px 0 0;
+  font-size: 13px;
+  word-break: keep-all;
+}
+.play-scene-card-quote {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--ink-mute);
+  word-break: keep-all;
+}
 .play-prose {
   margin-top: 12px;
 }

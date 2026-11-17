@@ -713,6 +713,42 @@ export function buildSeed(nowMs = Date.now()): SeedData {
       createdAt: iso(nowMs, -8 * HOUR),
       likes: 18,
     },
+    {
+      id: 'cm-8b',
+      novelId: 'nv-parcel',
+      episodeId: 'ep-parcel-1',
+      author: '밤의검수원',
+      text: '시계에 금 간 자리까지 똑같다는 문장에서 소름 돋았어요. 첫날 택배부터 복선이었네요',
+      createdAt: iso(nowMs, -6 * HOUR),
+      likes: 27,
+    },
+    {
+      id: 'cm-8c',
+      novelId: 'nv-parcel',
+      episodeId: 'ep-parcel-1',
+      author: '반송불가',
+      text: '네 번째는 열지 말라는데 세 번째가 이미 문 앞에 있는 게 제일 무섭다',
+      createdAt: iso(nowMs, -4 * HOUR),
+      likes: 33,
+    },
+    {
+      id: 'cm-9',
+      novelId: 'nv-contract',
+      episodeId: 'ep-contract-1',
+      author: '금고지기',
+      text: '폐점 사흘 전에 열리지 않는 금고가 문을 두드린다니, 도입부부터 계약서 제3조가 궁금해집니다',
+      createdAt: iso(nowMs, -30 * HOUR),
+      likes: 21,
+    },
+    {
+      id: 'cm-10',
+      novelId: 'nv-contract',
+      episodeId: 'ep-contract-1',
+      author: '이자가무서운사람',
+      text: '이자와 재고와 금고 하나, 이 한 줄에 서하 상황이 다 들어 있어서 감정이입이 됐어요',
+      createdAt: iso(nowMs, -22 * HOUR),
+      likes: 15,
+    },
   ]
 
   /* ─────────────── 신작 3편 + 기존 작품 다음 회차 합치기 ─────────────── */

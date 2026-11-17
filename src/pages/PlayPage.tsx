@@ -261,10 +261,24 @@ export function PlayPage() {
                 </div>
               </header>
 
-              {scene.image && (
+              {scene.image ? (
                 <figure className="play-scene-figure">
                   <img src={imageUrl(scene.image)} alt="" loading="lazy" decoding="async" />
                 </figure>
+              ) : (
+                speaker && (
+                  <div className="play-scene-card">
+                    {speaker.image && (
+                      <img src={imageUrl(speaker.image)} alt="" loading="lazy" decoding="async" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="play-scene-card-who">
+                        이 장면의 인물 · <b>{speaker.name}</b>
+                      </p>
+                      {speaker.quote && <p className="play-scene-card-quote">“{speaker.quote}”</p>}
+                    </div>
+                  </div>
+                )
               )}
 
               <div className="play-prose reader-body">
