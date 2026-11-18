@@ -75,15 +75,46 @@ export function readingMinutes(text: string): number {
 }
 
 /**
+ * 이름 뒤에 붙는 조사를 받침 유무로 고릅니다.
+ * 한글 음절은 (코드 - 0xAC00) % 28 이 0이면 받침이 없습니다.
+ * 예) 하윤은 / 서준은 · 유나는 / 정한결은
+ */
+function hasBatchim(word: string): boolean {
+  const trimmed = word.trim()
+  if (!trimmed) return false
+  const code = trimmed.charCodeAt(trimmed.length - 1)
+  if (code < 0xac00 || code > 0xd7a3) return false
+  return (code - 0xac00) % 28 > 0
+}
+
+/** 받침에 따라 조사 한 쌍 중 하나를 고릅니다. 한글이 아니면 둘 다 팔호로 병기합니다. */
+function pickParticle(word: string, withBatchim: string, withoutBatchim: string): string {
+  const trimmed = word.trim()
+  if (!trimmed) return trimmed
+  const code = trimmed.charCodeAt(trimmed.length - 1)
+  if (code < 0xac00 || code > 0xd7a3) return `${trimmed}${withBatchim}(${withoutBatchim})`
+  return `${trimmed}${hasBatchim(trimmed) ? withBatchim : withoutBatchim}`
+}
+
+/** '은/는' — 예) 하윤은 / 유나는 */
+export function withTopicParticle(name: string): string {
+  return pickParticle(name, '은', '는')
+}
+
+/** '이/가' — 예) 서준이 / 유나가 */
+export function withSubjectParticle(name: string): string {
+  return pickParticle(name, '이', '가')
+}
+
+/** '을/를' — 예) 정한결을 / 유나를 */
+export function withObjectParticle(name: string): string {
+  return pickParticle(name, '을', '를')
+}
+
+/**
  * 이름 뒤에 붙는 '와/과' 조사 — 받침 유무로 고릅니다.
  * 예) 유나와 대화 / 정한결과 대화
  */
 export function withAndParticle(name: string): string {
-  const trimmed = name.trim()
-  const last = trimmed.slice(-1)
-  const code = last.charCodeAt(0)
-  if (code >= 0xac00 && code <= 0xd7a3) {
-    return (code - 0xac00) % 28 > 0 ? `${trimmed}과` : `${trimmed}와`
-  }
-  return `${trimmed}와(과)`
+  return pickParticle(name, '과', '와')
 }

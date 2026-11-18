@@ -9,7 +9,7 @@ import {
   sceneOfflineReply,
 } from '../lib/chat'
 import { imageUrl } from '../data/art'
-import { withAndParticle } from '../lib/format'
+import { withAndParticle, withSubjectParticle } from '../lib/format'
 
 interface Props {
   novel: Novel
@@ -17,12 +17,10 @@ interface Props {
   characters: Character[]
   picks: PlayPick[]
   applied: AppliedLine[]
-  onApply: (input: {
-    text: string
-    kind: 'character' | 'user'
-    characterId: string
-    characterName: string
-  }) => void
+  /** 소설에 넣을 대사들 — 한 번에 여러 줄(티키타카)이 들어올 수 있습니다. */
+  onApply: (
+    inputs: { text: string; kind: 'character' | 'user'; characterId: string; characterName: string }[],
+  ) => void
   onClose: () => void
 }
 
@@ -70,15 +68,24 @@ export function SceneChat({ novel, scene, characters, picks, applied, onApply, o
   )
 
   const apply = useCallback(
-    (text: string, kind: 'character' | 'user', who: Character) => {
-      const value = text.trim()
-      if (!value) return
-      if (appliedKeys.has(`${kind}::${value}`)) {
+    (items: { text: string; kind: 'character' | 'user' }[], who: Character) => {
+      const fresh = items
+        .map((item) => ({ ...item, text: item.text.trim() }))
+        .filter((item) => item.text.length > 0 && !appliedKeys.has(`${item.kind}::${item.text}`))
+      if (fresh.length === 0) {
         notify('이미 소설에 들어간 대사예요')
         return
       }
-      onApply({ text: value, kind, characterId: who.id, characterName: who.name })
-      notify('대사를 소설에 넣었어요')
+      // 티키타카는 내 대사와 캐릭터 대사를 한 번에 넘깁니다. 두 줄 모두 저장되어야 합니다.
+      onApply(
+        fresh.map((item) => ({
+          text: item.text,
+          kind: item.kind,
+          characterId: who.id,
+          characterName: who.name,
+        })),
+      )
+      notify(fresh.length > 1 ? `대사 ${fresh.length}개를 소설에 넣었어요` : '대사를 소설에 넣었어요')
     },
     [appliedKeys, notify, onApply],
   )
@@ -200,7 +207,7 @@ export function SceneChat({ novel, scene, characters, picks, applied, onApply, o
                 {avatar ? <img src={avatar} alt="" /> : <span aria-hidden>{character.name.slice(0, 1)}</span>}
               </span>
               <p className="scene-chat-empty-title">
-                {character.name}는 지금 이 장면에 서 있습니다
+                {withSubjectParticle(character.name)} 지금 이 장면에 서 있습니다
               </p>
               <p className="scene-chat-empty-body">
                 “{scene.place}” — {scene.title}. 여기까지의 내 선택을 기억하고 {character.name}의 말투로
@@ -231,7 +238,7 @@ export function SceneChat({ novel, scene, characters, picks, applied, onApply, o
                     type="button"
                     className="scene-chat-apply"
                     data-applied={isApplied}
-                    onClick={() => apply(message.text, kind, character)}
+                    onClick={() => apply([{ text: message.text, kind }], character)}
                   >
                     {isApplied ? '✓ 소설에 들어감' : '✎ 이 대사 소설에 적용'}
                   </button>
@@ -239,10 +246,15 @@ export function SceneChat({ novel, scene, characters, picks, applied, onApply, o
                     <button
                       type="button"
                       className="scene-chat-apply ghost"
-                      onClick={() => {
-                        apply(previous.text, 'user', character)
-                        apply(message.text, 'character', character)
-                      }}
+                      onClick={() =>
+                        apply(
+                          [
+                            { text: previous.text, kind: 'user' },
+                            { text: message.text, kind: 'character' },
+                          ],
+                          character,
+                        )
+                      }
                     >
                       티키타카 둘 다 넣기
                     </button>

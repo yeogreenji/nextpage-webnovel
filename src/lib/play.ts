@@ -173,16 +173,23 @@ export function undoLastPick(flow: StoryFlow, session: PlaySession): PlaySession
 
 /**
  * 엔딩 판정.
- * — 여섯 번의 선택 중 결이 더 많은 쪽의 엔딩으로.
- * — 정확히 반반이면 'mixed' 엔딩(세 번째 엔딩)으로.
+ * — 마지막 장면에서 고른 선택의 결이 엔딩을 정합니다.
+ *   앞선 선택은 이미 본문(이음 문단·결과 문단)에 반영되어 있으므로,
+ *   결말은 독자가 마지막에 한 행동과 절대 어긋나지 않아야 합니다.
  */
 export function resolveEnding(flow: StoryFlow, session: PlaySession): PlayEnding | null {
   if (session.picks.length < flow.scenes.length) return null
-  const a = session.picks.filter((pick) => pick.tone === 'A').length
-  const b = session.picks.filter((pick) => pick.tone === 'B').length
-  const tone: PlayEnding['tone'] = a > b ? 'A' : b > a ? 'B' : 'mixed'
-  const found = flow.endings.find((ending) => ending.tone === tone)
-  return found ?? flow.endings[0] ?? null
+  const tone = session.picks[session.picks.length - 1]?.tone
+  if (!tone) return null
+  return flow.endings.find((ending) => ending.tone === tone) ?? null
+}
+
+/** 앞선 선택의 결 — 엔딩 화면에서 여정을 한 줄로 되짚을 때 씁니다. */
+export function toneCounts(session: PlaySession): { a: number; b: number } {
+  return {
+    a: session.picks.filter((pick) => pick.tone === 'A').length,
+    b: session.picks.filter((pick) => pick.tone === 'B').length,
+  }
 }
 
 /** n번째 장면(0-based) 앞에 붙는 이음 문단 — 직전 선택의 결에 따라 달라집니다. */
@@ -219,6 +226,29 @@ export function addAppliedLine(
     at: new Date().toISOString(),
   }
   return { ...session, applied: [...session.applied, line] }
+}
+
+export interface AppliedInput {
+  characterId: string
+  characterName: string
+  kind: AppliedLine['kind']
+  text: string
+}
+
+/**
+ * 여러 줄을 한 번에 소설에 넣습니다.
+ * — 「티키타카 둘 다 넣기」처럼 내 대사와 캐릭터 대사가 함께 들어와도
+ *   한 번의 상태 갱신으로 모두 저장됩니다 (뒤엣것이 앞엣것을 덮지 않습니다).
+ */
+export function addAppliedLines(
+  session: PlaySession,
+  sceneId: string,
+  inputs: AppliedInput[],
+): PlaySession {
+  return inputs.reduce(
+    (current, input) => addAppliedLine(current, { sceneId, ...input }),
+    session,
+  )
 }
 
 export function removeAppliedLine(session: PlaySession, id: string): PlaySession {
@@ -291,8 +321,7 @@ export function buildFinale(flow: StoryFlow, session: PlaySession): FinaleNovel 
     return { id: scene.id, no: scene.no, title: scene.title, place: scene.place, blocks }
   })
 
-  const toneA = session.picks.filter((pick) => pick.tone === 'A').length
-  const toneB = session.picks.filter((pick) => pick.tone === 'B').length
+  const { a: toneA, b: toneB } = toneCounts(session)
 
   const byCharacter = new Map<string, number>()
   session.applied.forEach((line) => {

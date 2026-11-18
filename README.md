@@ -10,10 +10,10 @@
 넥스트페이지는 그 방향을 뒤집습니다. 작품마다 **여섯 번의 양자택일**이 있고, 고른 즉시 그 결과가
 본문에 붙어 다음 장면이 열립니다. 읽는 중간에 장면 속 인물과 대화하고, 마음에 드는 대사를
 **「이 대사 소설에 적용」**으로 본문에 넣을 수 있습니다. 마지막 선택까지 마치면 내가 고른 분기와
-내가 넣은 대사만으로 이뤄진 **한 편의 소설**이 완성됩니다. 엔딩은 작품마다 세 개,
-선택의 결이 반반이면 세 번째 엔딩이 열립니다.
+내가 넣은 대사만으로 이뤄진 **한 편의 소설**이 완성됩니다. 엔딩은 작품마다 두 개,
+**마지막 장면에서 고른 선택이 엔딩을 정합니다** — 앞선 다섯 번의 선택은 본문으로, 마지막 한 번은 결말로 남습니다.
 
-15작품 · 90개의 양자택일 장면 · 45개의 엔딩 · 60명의 인물 · 160점의 일러스트가 들어 있습니다.
+15작품 · 90개의 양자택일 장면 · 30개의 엔딩 · 60명의 인물 · 160점의 일러스트가 들어 있습니다.
 
 화면은 **옵시디언 플럼 바탕에 일렉트릭 로즈·인디고 바이올렛**을 얹은 다크 테마로 시작하고,
 읽기 화면에서는 라이트·세피아·다크를 골라 쓸 수 있습니다.
@@ -43,7 +43,7 @@
 | --- | --- | --- | --- |
 | ![carousel](docs/screenshots-v3/01-home-carousel.png) | ![play](docs/screenshots-v3/02-play-choice.png) | ![chat](docs/screenshots-v3/03-scene-chat.png) | ![finale](docs/screenshots-v3/04-finale.png) |
 
-- 흐름 데이터는 `src/data/flows/` (5개 파일 · 15작품)에 있고, 한 작품 = 6장면 × 양자택일 2개 + 엔딩 3개입니다.
+- 흐름 데이터는 `src/data/flows/` (5개 파일 · 15작품)에 있고, 한 작품 = 6장면 × 양자택일 2개 + 엔딩 2개(A/B)입니다.
 - 진행·적용 대사는 `np.play.v1`, 장면 대화는 `np.scenechat.v1`로 이 기기에 저장됩니다.
 - 기존의 회차 읽기·투표·분기 트리·작가 스튜디오는 그대로 남아 있고, 홈에서는 인터랙티브 모드가
   앞에 섭니다.
@@ -221,10 +221,16 @@ npm install
 npm run dev      # http://localhost:5173
 npm run build    # 타입 검사 + 프로덕션 빌드 (dist/)
 npm run preview  # 빌드 결과 확인
+
+npm test         # 단위·화면 검사 (엔딩 일치·티키타카 저장·조사 처리·데이터 린트)
+npm run test:e2e # Playwright E2E (실제 브라우저에서 15작품 엔딩·티키타카·조사)
+npm run check    # 타입 → 단위 → 빌드 → E2E 순서로 전부
 ```
 
 - Node 20 이상 권장 (`.nvmrc`: 22)
 - `npm run build`는 `tsc --noEmit`을 먼저 실행하므로 타입 오류가 있으면 빌드가 멈춥니다.
+- `npm test`는 브라우저 없이 돕니다(esbuild 번들 + `node:test` + jsdom). `npm run test:e2e`는 개발 서버를
+  자동으로 띄운 뒤 Chromium으로 확인하므로, 처음 한 번은 `npx playwright install chromium`이 필요합니다.
 
 ## 4. GitHub Pages 배포
 
@@ -332,6 +338,10 @@ public/images/
 ├─ covers/         작품 표지 15종 + 키 비주얼 15종
 ├─ characters/     인물 카드 60종
 └─ scenes/         선택지 장면 + 본문 삽화
+tests/              단위·화면 검사 (엔딩 64경로 · 티키타카 · 조사 · 데이터 린트)
+e2e/                Playwright E2E (15작품 엔딩 · 장면 대화 · 조사)
+scripts/
+└─ test-unit.mjs    단위·화면 검사 실행기
 docs/
 ├─ BACKEND.md      Supabase 스키마 · 저장소 매핑
 ├─ screenshots/    README 이미지 (1차)

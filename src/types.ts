@@ -175,14 +175,17 @@ export interface PlayEnding {
   name: string
   kicker: string
   body: string[]
-  /** 어떤 결의 선택이 모였을 때 닿는 엔딩인지 (mixed = 반반) */
-  tone: 'A' | 'B' | 'mixed'
+  /**
+   * 마지막 장면에서 어떤 결(A/B)의 선택을 했을 때 닿는 엔딩인지.
+   * 엔딩은 마지막 선택의 결로만 정해지므로 A와 B 두 엔딩이 작품마다 하나씩 있어야 합니다.
+   */
+  tone: 'A' | 'B'
 }
 
 /** 한 작품의 인터랙티브 흐름 */
 export interface StoryFlow {
   novelId: string
-  /** 예: '여섯 번의 선택, 세 개의 엔딩' */
+  /** 예: '여섯 번의 선택 · 두 개의 엔딩' */
   structure: string
   scenes: PlayScene[]
   endings: PlayEnding[]

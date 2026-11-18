@@ -173,7 +173,7 @@ export function HomePage() {
             <p className="eyebrow">Feed · 표지 갤러리</p>
             <h2 className="section-title">연재 중인 작품</h2>
             <p className="mt-1.5 text-[12px]" style={{ color: 'var(--ink-mute)' }}>
-              모든 작품이 여섯 번의 양자택일과 세 개의 엔딩으로 이어집니다.
+              모든 작품이 여섯 번의 양자택일과 두 개의 엔딩으로 이어집니다.
             </p>
           </div>
           <Link to="/library" className="text-[12px] font-bold" style={{ color: 'var(--accent)' }}>
@@ -260,7 +260,7 @@ export function HomePage() {
               이 소설의 다음 문장은, 내가 쓴다
             </h2>
             <p className="mt-2 text-[12.5px] opacity-80">
-              고르고, 대화하고, 완성하세요. {novels.length}편 모두 여섯 번의 선택과 세 개의 엔딩으로
+              고르고, 대화하고, 완성하세요. {novels.length}편 모두 여섯 번의 선택과 두 개의 엔딩으로
               이어집니다.
             </p>
           </div>

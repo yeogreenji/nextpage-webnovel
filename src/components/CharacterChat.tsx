@@ -5,6 +5,7 @@ import { useStore } from '../store/StoreProvider'
 import { buildChatRequest, clearMessages, loadMessages, makeMessage, offlineReply, saveMessages } from '../lib/chat'
 import { describeChoices } from '../lib/story'
 import { imageUrl } from '../data/art'
+import { withAndParticle } from '../lib/format'
 
 interface Props {
   novel: Novel
@@ -142,7 +143,7 @@ export function CharacterChat({ novel, character, currentEpisode, onClose }: Pro
       <div className="chat-thread" ref={listRef}>
         {messages.length === 0 && (
           <div className="chat-empty">
-            <p className="chat-empty-title">{character.name}와 첫 대화를 시작해 보세요</p>
+            <p className="chat-empty-title">{withAndParticle(character.name)} 첫 대화를 시작해 보세요</p>
             <p className="chat-empty-body">
               이 작품({novel.title})의 세계관과 내가 고른 선택지를 기억하고, {character.name}의 말투로
               답장합니다.

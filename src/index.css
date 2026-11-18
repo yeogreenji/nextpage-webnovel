@@ -4838,6 +4838,18 @@ body {
   color: var(--ink-mute) !important;
   word-break: keep-all;
 }
+.finale-pick-label {
+  display: inline-block;
+  margin-right: 8px;
+  font-family: var(--font-sans);
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  vertical-align: 1px;
+}
 .finale-say {
   margin: 1em 0;
   padding: 10px 14px;
@@ -5034,6 +5046,15 @@ body {
   line-height: 1.7;
   font-weight: 500;
   color: var(--ink-mute);
+}
+.finale-chapter-head p.finale-ending-tone {
+  margin: 8px 0 0;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+  color: var(--ink-soft);
+  opacity: 0.75;
 }
 .finale-chapter-head h2 {
   font-family: var(--font-sans);

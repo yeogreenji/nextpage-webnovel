@@ -6,3 +6,6 @@ dist-ssr
 .vite
 *.log
 .tmp
+tests/.build
+test-results
+playwright-report

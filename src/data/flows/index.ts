@@ -8,7 +8,7 @@ import { lodgeFlow, occultFlow, parcelFlow } from './thriller'
 
 /**
  * 인터랙티브 소설 흐름 — 15작품 전부.
- * — 작품마다 여섯 번의 양자택일, 세 개의 엔딩.
+ * — 작품마다 여섯 번의 양자택일, 두 개의 엔딩 — 마지막 선택이 엔딩을 정합니다.
  * — 마지막 선택까지 마치면 '내가 완성한 소설'로 한 편이 됩니다.
  */
 const BASE_FLOWS: StoryFlow[] = [

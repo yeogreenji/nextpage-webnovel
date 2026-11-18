@@ -9,6 +9,7 @@ import type {
   VoteRecord,
 } from '../types'
 import { describeChoices } from './story'
+import { withSubjectParticle } from './format'
 
 const STORE_KEY = 'np.chat.v1'
 const SCENE_STORE_KEY = 'np.scenechat.v1'
@@ -222,12 +223,12 @@ export function sceneOfflineReply(
 
   if (text.includes('?') || /까$|니$|요\?$/.test(text)) {
     lines.push(`“${text.replace(/\?+$/, '')}…”`)
-    lines.push(`${character.name}는 ${place}에서 잠깐 대답을 골랐다. “지금은, 제가 아는 것만 말할 수 있어요.”`)
+    lines.push(`${withSubjectParticle(character.name)} ${place}에서 잠깐 대답을 골랐다. “지금은, 제가 아는 것만 말할 수 있어요.”`)
   } else if (text.length <= 12) {
     lines.push(`“${text}”`)
-    lines.push(`짧은 말이 ${place}의 공기에 오래 남았다. ${character.name}는 고개를 끄덕였다.`)
+    lines.push(`짧은 말이 ${place}의 공기에 오래 남았다. ${withSubjectParticle(character.name)} 고개를 끄덕였다.`)
   } else {
-    lines.push(`${character.name}는 말을 들으며 손끝을 멈췄다. “그렇게 말해 주는 사람은, 처음이에요.”`)
+    lines.push(`${withSubjectParticle(character.name)} 말을 들으며 손끝을 멈췄다. “그렇게 말해 주는 사람은, 처음이에요.”`)
   }
 
   if (lastPick) {
@@ -262,7 +263,7 @@ export function offlineReply(
   } else if (short) {
     lines.push(`"${text}"… 그렇게 짧게 말하는 것도, ${character.name}에게는 답이 됩니다.`)
   } else {
-    lines.push(`말을 들으며, ${character.name}는 조금 생각했습니다. ${text.length > 30 ? text.slice(0, 30) + '…' : text}`)
+    lines.push(`말을 들으며, ${withSubjectParticle(character.name)} 조금 생각했습니다. ${text.length > 30 ? text.slice(0, 30) + '…' : text}`)
   }
 
   if (lastChoice) {

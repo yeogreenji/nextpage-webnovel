@@ -117,7 +117,8 @@ export function FinalePage() {
     if (block.kind === 'pick') {
       return (
         <p className="finale-pick" key={`pick-${index}`}>
-          — {block.text}
+          <span className="finale-pick-label">내 선택</span>
+          {block.text}
         </p>
       )
     }
@@ -226,6 +227,10 @@ export function FinalePage() {
             <p className="eyebrow">에필로그 · Ending</p>
             <h2>{finale.ending.name}</h2>
             <p className="finale-ending-kicker">{finale.ending.kicker}</p>
+            <p className="finale-ending-tone">
+              여섯 번의 선택 중 A {finale.stats.toneA} · B {finale.stats.toneB}. 그중 마지막 한 번이 이
+              결말을 정했습니다.
+            </p>
           </header>
           <div className="reader-body finale-prose">
             {finale.ending.body.map((paragraph, index) => (
@@ -290,7 +295,7 @@ export function FinalePage() {
         </div>
 
         <p className="finale-note">
-          마지막 선택 하나만 바꿔도 엔딩이 달라집니다. 반반으로 고르면 세 번째 엔딩이 열려요.
+          엔딩은 마지막 장면에서 고른 선택이 정합니다. 마지막 선택 하나만 바꿔도 엔딩이 달라집니다.
         </p>
       </section>
     </div>

@@ -7,9 +7,10 @@ import { ReadingProgress } from '../components/ReadingProgress'
 import { withAndParticle } from '../lib/format'
 import { ReaderToolbar } from '../components/ReaderToolbar'
 import { SceneChat } from '../components/SceneChat'
+import type { AppliedInput } from '../lib/play'
 import type { AppliedLine, PlayChoice, PlayScene, PlaySession } from '../types'
 import {
-  addAppliedLine,
+  addAppliedLines,
   appliedFor,
   leadOf,
   clearSession,
@@ -92,18 +93,13 @@ export function PlayPage() {
     [flow, notify, session],
   )
 
-  const applyLine = useCallback(
-    (sceneId: string) =>
-      (input: {
-        text: string
-        kind: 'character' | 'user'
-        characterId: string
-        characterName: string
-      }) => {
-        if (!session) return
-        setSession(saveSession(addAppliedLine(session, { sceneId, ...input })))
-      },
-    [session],
+  const applyLines = useCallback(
+    (sceneId: string) => (inputs: AppliedInput[]) => {
+      // 「티키타카 둘 다 넣기」처럼 한 번에 여러 줄이 들어와도
+      // 한 번의 상태 갱신으로 모두 저장합니다.
+      setSession((prev) => saveSession(addAppliedLines(prev ?? ensureSession(novelId), sceneId, inputs)))
+    },
+    [novelId],
   )
 
   const rewind = useCallback(
@@ -228,7 +224,8 @@ export function PlayPage() {
             <li>고른 즉시 <b>결과 문단</b>이 본문에 붙고 다음 장면이 열립니다.</li>
             <li>장면 중간에 <b>캐릭터와 대화</b>하고, 대사를 소설로 가져올 수 있습니다.</li>
             <li>
-              마지막에 <b>{flow.endings.length}개의 엔딩</b> 중 하나 — 내 선택의 결이 엔딩을 정합니다.
+              마지막에 <b>{flow.endings.length}개의 엔딩</b> 중 하나 — 마지막 장면에서 고른 선택이
+              엔딩을 정합니다.
             </li>
           </ul>
           <div className="play-intro-tools">
@@ -393,6 +390,10 @@ export function PlayPage() {
               <dt>도달한 엔딩</dt>
               <dd>{ending.name}</dd>
             </div>
+            <div>
+              <dt>마지막 선택</dt>
+              <dd>{activeSession.picks[flow.scenes.length - 1]?.tone === 'A' ? 'A' : 'B'}</dd>
+            </div>
           </dl>
 
           <div className="play-finish-actions">
@@ -411,8 +412,8 @@ export function PlayPage() {
             </button>
           </div>
           <p className="play-finish-note">
-            다른 선택을 고르면 다른 엔딩이 열립니다. 이 작품에는 엔딩이 {flow.endings.length}개 있고,
-            지금은 그중 하나에 도착했습니다.
+            엔딩은 마지막 장면에서 고른 선택이 정합니다. 마지막 선택 하나를 바꾸면 다른 엔딩이 열리고,
+            이 작품에는 엔딩이 {flow.endings.length}개 있습니다.
           </p>
         </section>
       )}
@@ -498,7 +499,7 @@ export function PlayPage() {
           characters={characters}
           picks={activeSession.picks}
           applied={appliedFor(activeSession, chatScene.id) as AppliedLine[]}
-          onApply={applyLine(chatScene.id)}
+          onApply={applyLines(chatScene.id)}
           onClose={() => setChatSceneId(null)}
         />
       )}

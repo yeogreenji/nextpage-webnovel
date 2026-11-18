@@ -71,7 +71,7 @@ export function LibraryPage() {
           <h1 className="mt-1 text-[26px] sm:text-[30px] font-extrabold tracking-tight">작품 목록</h1>
           <p className="mt-2 text-[13px] max-w-[560px]" style={{ color: 'var(--ink-soft)' }}>
             연재 중인 선택형 웹소설 {novels.length}편. 로맨스부터 무협·SF·오컬트까지, 모든 작품은
-            여섯 번의 양자택일과 세 개의 엔딩으로 이어집니다. 고른 만큼 내 소설이 됩니다.
+            여섯 번의 양자택일과 두 개의 엔딩으로 이어집니다. 고른 만큼 내 소설이 됩니다.
           </p>
         </div>
         <span className="chip chip-accent">{list.length}편 표시 중</span>
