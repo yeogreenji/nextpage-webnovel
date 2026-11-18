@@ -22,21 +22,22 @@ export interface NovelRepository {
 }
 
 export const DEFAULT_SETTINGS: ReaderSettings = {
-  theme: 'dark',
+  theme: 'light',
   fontSize: 18,
-  lineHeight: 2,
-  font: 'serif',
+  lineHeight: 1.9,
+  font: 'sans',
 }
 
 /** 시드 콘텐츠 버전 — 새 작품·회차를 기존 저장분 위에 얹을 때 씁니다. */
-const SEED_VERSION = 7
+const SEED_VERSION = 8
 
 const KEYS = {
   novels: 'np.novels.v1',
   episodes: 'np.episodes.v1',
   comments: 'np.comments.v1',
   votes: 'np.votes.v1',
-  settings: 'np.settings.v1',
+  // 2026 리뉴얼: 기본 서체를 Pretendard(고딕)로 바꾸며 저장 키를 새로 잡았습니다.
+  settings: 'np.settings.v2',
   version: 'np.seed.version.v1',
 } as const
 

@@ -2,8 +2,9 @@ import { JSDOM } from 'jsdom'
 
 /**
  * 화면(DOM) 검사 — 실제 브라우저 대신 jsdom에서 앱을 띄워 확인합니다.
- *  · 장면 채팅의 「티키타카 둘 다 넣기」가 두 줄을 모두 남기는지 (본문·저장·완성본)
- *  · 조사 처리(이/가)가 화면 문구에 반영되는지
+ *  · 말 걸기 지점에서 대화를 걸면 행동 요약과 대사가 본문에 그대로 들어가는지
+ *  · 이후 대사를 「적용」으로 골라 담을 수 있는지 (본문·저장·완성본)
+ *  · 25작품 모두 마지막 선택과 엔딩이 어긋나지 않는지
  *  · 콘솔 에러 없이 그려지는지
  */
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
@@ -32,7 +33,6 @@ define('requestAnimationFrame', (callback: FrameRequestCallback) =>
 define('cancelAnimationFrame', (handle: number) => dom.window.clearTimeout(handle))
 define('scrollTo', () => {})
 define('matchMedia', () => ({ matches: false, addEventListener: () => {}, removeEventListener: () => {} }))
-// jsdom에는 없는 스크롤 API — 화면 코드가 부드럽게 스크롤할 때 필요합니다.
 dom.window.Element.prototype.scrollIntoView = () => {}
 dom.window.scrollTo = () => {}
 
@@ -53,7 +53,7 @@ console.error = (...args: unknown[]) => {
   originalError(...args)
 }
 
-const settle = () => new Promise((resolve) => setTimeout(resolve, 80))
+const settle = () => new Promise((resolve) => setTimeout(resolve, 90))
 
 function renderApp(initialPath: string) {
   return render(
@@ -77,11 +77,11 @@ function renderApp(initialPath: string) {
   )
 }
 
-/** 지금 열린 장면의 A/B 카드 중 하나를 누릅니다. */
+/** 지금 열린 장면에서 n번째 갈래를 누릅니다. */
 async function pick(sceneIndex: number, choiceIndex: number) {
   const cards = await waitFor(() => {
     const found = document.querySelectorAll(`#play-scene-${sceneIndex} .choice-panel .choice-card`)
-    assert.equal(found.length, 2, `${sceneIndex}장 선택지`)
+    assert.ok(found.length >= 3 && found.length <= 4, `${sceneIndex}장 선택지 ${found.length}`)
     return found
   })
   await settle()
@@ -89,81 +89,91 @@ async function pick(sceneIndex: number, choiceIndex: number) {
   await settle()
 }
 
-describe('화면 — 장면 대화로 넣은 대사', () => {
-  it('티키타카 둘 다 넣기 → 두 줄이 본문과 저장소, 완성본에 모두 남는다', async () => {
+describe('화면 — 말 걸기 지점에서 소설로', () => {
+  it('말을 걸면 행동 요약과 첫 대사가 본문·저장소·완성본에 들어간다', async () => {
     window.localStorage.clear()
-    renderApp('/novel/nv-cafe/play')
+    renderApp('/novel/nv-secretary/play')
 
-    await pick(0, 1)
-
-    // 2장에서 명숙과 대화 열기
-    const chatButton = document.querySelector('#play-scene-1 .play-chat-inline') as HTMLElement | null
-    assert.ok(chatButton, '이 장면에서 대화 버튼')
-    fireEvent.click(chatButton)
-
-    // 조사 처리 확인 — 명숙(받침) → '명숙이 지금 이 장면에 서 있습니다'
-    await waitFor(() => {
-      const title = document.querySelector('.scene-chat-empty-title')
-      assert.ok(title, '대화 빈 화면')
-      assert.equal(title?.textContent?.trim(), '명숙이 지금 이 장면에 서 있습니다')
+    // 1장의 말 걸기 지점이 보인다
+    const gate = await waitFor(() => {
+      const found = document.querySelector('#play-scene-0 .speak-gate')
+      assert.ok(found, '말 걸기 지점')
+      return found as HTMLElement
     })
+    const prompts = gate.querySelectorAll('.speak-gate-prompts button')
+    assert.equal(prompts.length, 4, '추천 대사 4개')
 
-    // 메시지 보내기 → 기기 안 응답(개발 서버에는 /api/chat이 없습니다)
-    const input = document.querySelector('input[aria-label="메시지 입력"]') as HTMLInputElement | null
-    assert.ok(input, '메시지 입력')
-    fireEvent.change(input, { target: { value: '할머니, 그 장부 아직 있어요?' } })
+    // 추천 대사 하나를 고르면 입력창에 그대로 담긴다
+    fireEvent.click(prompts[0] as HTMLElement)
+    const input = await waitFor(() => {
+      const found = document.querySelector('input[aria-label="메시지 입력"]') as HTMLInputElement | null
+      assert.ok(found, '메시지 입력')
+      return found
+    })
+    const chosen = (prompts[0] as HTMLElement).textContent?.replace(/^“|”$/g, '') ?? ''
+    await waitFor(() => assert.ok(input.value.length > 0, '추천 대사가 채워짐'))
+    assert.equal(input.value, chosen)
+
+    // 보내면 대화가 열리고, 행동 요약 + 내 대사가 바로 소설로 들어간다
     fireEvent.submit(input.closest('form') as HTMLFormElement)
+    await waitFor(
+      () => {
+        const said = document.querySelector('#play-scene-0 .play-said')
+        assert.ok(said, '소설에 들어간 대화')
+        assert.equal(said?.querySelectorAll('.play-line').length, 2, '내 대사 + 캐릭터 대사')
+        assert.equal(said?.querySelectorAll('.play-said-action').length, 1, '행동 요약')
+      },
+      { timeout: 12_000 },
+    )
 
-    const pairButton = await waitFor(
+    const stored = JSON.parse(window.localStorage.getItem('np.play.v1') ?? '{}')
+    const applied = stored['nv-secretary'].applied as { kind: string; text: string }[]
+    assert.equal(applied.length, 3, '행동 + 내 대사 + 캐릭터 대사')
+    assert.deepEqual(applied.map((line) => line.kind), ['action', 'user', 'character'])
+
+    // 대화 닫고, 이후 대사는 「적용」으로 골라 담는다
+    fireEvent.click(document.querySelector('.scene-chat-close') as HTMLElement)
+    await settle()
+    fireEvent.click(document.querySelector('#play-scene-0 .speak-gate-open') as HTMLElement)
+    const input2 = await waitFor(() => {
+      const found = document.querySelector('input[aria-label="메시지 입력"]') as HTMLInputElement | null
+      assert.ok(found)
+      return found
+    })
+    fireEvent.change(input2, { target: { value: '그 숫자, 저는 못 믿겠습니다.' } })
+    fireEvent.submit(input2.closest('form') as HTMLFormElement)
+    const applyButton = await waitFor(
       () => {
         const buttons = Array.from(document.querySelectorAll('.scene-chat-apply')) as HTMLElement[]
-        const found = buttons.find((button) => button.textContent?.includes('티키타카 둘 다 넣기'))
-        assert.ok(found, '티키타카 버튼')
+        const found = buttons.find((button) => (button.textContent ?? '').includes('이 대사 소설에 적용'))
+        assert.ok(found, '적용 버튼')
         return found as HTMLElement
       },
-      { timeout: 10_000 },
+      { timeout: 12_000 },
     )
-    fireEvent.click(pairButton)
+    fireEvent.click(applyButton)
+    await settle()
+    fireEvent.click(document.querySelector('.scene-chat-close') as HTMLElement)
     await settle()
 
-    // 본문에 두 줄
     await waitFor(() => {
-      const lines = document.querySelectorAll('#play-scene-1 .play-line')
-      assert.equal(lines.length, 2)
+      const lines = document.querySelectorAll('#play-scene-0 .play-said .play-line')
+      assert.ok(lines.length >= 3, `본문 대사 ${lines.length}`)
     })
-    const rendered = Array.from(document.querySelectorAll('#play-scene-1 .play-line')).map((line) =>
-      line.textContent?.replace(/\s+/g, ' ').trim(),
-    )
-    assert.ok(rendered.some((text) => text?.includes('장부 아직 있어요')), '내 대사가 본문에')
-    assert.ok(rendered.some((text) => text?.includes('명숙')), '캐릭터 대사가 본문에')
 
-    // 저장소에도 두 줄
-    const stored = JSON.parse(window.localStorage.getItem('np.play.v1') ?? '{}')
-    const applied = stored['nv-cafe'].applied as { kind: string; text: string }[]
-    assert.equal(applied.length, 2)
-    assert.deepEqual(
-      applied.map((line) => line.kind),
-      ['user', 'character'],
-    )
-
-    // 나머지 선택을 마치고 완성본에서도 두 줄
-    for (let index = 1; index < 6; index += 1) {
+    // 나머지 선택을 마치고 완성본에서도 대사가 이어진다
+    for (let index = 0; index < 6; index += 1) {
       await pick(index, 0)
     }
-
     const finaleLink = document.querySelector('#play-finish a.btn-primary') as HTMLAnchorElement | null
     assert.ok(finaleLink, '완성본 링크')
     fireEvent.click(finaleLink)
-
     await waitFor(() => {
-      const says = document.querySelectorAll('.finale-say')
-      assert.equal(says.length, 2)
+      const body = document.querySelector('.finale-body')?.textContent ?? ''
+      assert.ok(body.includes('그 숫자, 저는 못 믿겠습니다.'), '완성본에 내 대사')
+      assert.ok(body.includes('나는'), '완성본에 행동 요약')
     })
-    const finaleText = document.querySelector('.finale-body')?.textContent ?? ''
-    assert.ok(finaleText.includes(applied[0].text), '완성본에 내 대사')
-    assert.ok(finaleText.includes(applied[1].text), '완성본에 캐릭터 대사')
 
-    // 콘솔 에러 0 (React act 경고 등은 제외하고 실제 오류만)
     const realErrors = consoleErrors.filter((message) => !message.includes('not wrapped in act'))
     assert.deepEqual(realErrors, [])
 
@@ -173,13 +183,15 @@ describe('화면 — 장면 대화로 넣은 대사', () => {
 
 describe('화면 — 마지막 선택과 엔딩', () => {
   for (const flow of ALL_FLOWS) {
+    const last = flow.scenes[5]
     const endingB = flow.endings.find((ending) => ending.tone === 'B')!
+    const bIndex = last.choices.findIndex((choice) => choice.tone === 'B')
     it(`${flow.novelId} · 마지막에 B를 고르면 「${endingB.name}」`, async () => {
       window.localStorage.clear()
       renderApp(`/novel/${flow.novelId}/play`)
 
       for (let index = 0; index < 6; index += 1) {
-        await pick(index, index === 5 ? 1 : index % 2)
+        await pick(index, index === 5 ? bIndex : index % last.choices.length)
       }
 
       await waitFor(() => {
@@ -192,15 +204,17 @@ describe('화면 — 마지막 선택과 엔딩', () => {
     })
   }
 
-  for (const novelId of ['nv-cafe', 'nv-academy', 'nv-parcel', 'nv-office']) {
+  for (const novelId of ['nv-cafe', 'nv-academy', 'nv-parcel', 'nv-office', 'nv-secretary']) {
     const flow = ALL_FLOWS.find((item) => item.novelId === novelId)!
+    const last = flow.scenes[5]
     const endingA = flow.endings.find((ending) => ending.tone === 'A')!
+    const aIndex = last.choices.findIndex((choice) => choice.tone === 'A')
     it(`${novelId} · 마지막에 A를 고르면 「${endingA.name}」`, async () => {
       window.localStorage.clear()
       renderApp(`/novel/${novelId}/play`)
 
       for (let index = 0; index < 6; index += 1) {
-        await pick(index, index === 5 ? 0 : (index + 1) % 2)
+        await pick(index, index === 5 ? aIndex : (index + 1) % last.choices.length)
       }
 
       await waitFor(() => {

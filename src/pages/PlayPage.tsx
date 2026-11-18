@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
 import { imageUrl } from '../data/art'
@@ -7,11 +7,13 @@ import { ReadingProgress } from '../components/ReadingProgress'
 import { withAndParticle } from '../lib/format'
 import { ReaderToolbar } from '../components/ReaderToolbar'
 import { SceneChat } from '../components/SceneChat'
+import { interactionFor } from '../lib/interaction'
 import type { AppliedInput } from '../lib/play'
 import type { AppliedLine, PlayChoice, PlayScene, PlaySession } from '../types'
 import {
   addAppliedLines,
   appliedFor,
+  interactionAnchorOf,
   leadOf,
   clearSession,
   emptySession,
@@ -26,8 +28,9 @@ import {
 
 /**
  * ✨ 내가 선택하는 대로 완성되는 소설 — 플레이/집필 화면.
- * - 장면마다 A/B 양자택일, 고르는 즉시 결과 문단이 본문에 붙고 다음 장면이 열립니다.
- * - 장면 중간에 캐릭터와 대화하고, 마음에 드는 대사를 소설로 가져올 수 있습니다.
+ * - 장면마다 3~4개의 갈래, 고르는 즉시 결과 문단이 본문에 붙고 다음 장면이 열립니다.
+ * - 장면 중간, 말을 걸기 좋은 자리에서 인물과 대화합니다.
+ *   말을 걸면 행동 요약과 대사가 그 자리에 그대로 소설로 들어갑니다.
  * - 여섯 번 고르면 '내가 완성한 소설'로 이어집니다.
  */
 export function PlayPage() {
@@ -37,6 +40,7 @@ export function PlayPage() {
   const flow = flowFor(novelId)
   const [session, setSession] = useState<PlaySession | null>(null)
   const [chatSceneId, setChatSceneId] = useState<string | null>(null)
+  const [chatSeed, setChatSeed] = useState<string | null>(null)
   const [recordOpen, setRecordOpen] = useState(false)
   const [justPicked, setJustPicked] = useState<string | null>(null)
   const timers = useRef<number[]>([])
@@ -128,13 +132,13 @@ export function PlayPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [novelId, notify])
 
-  // 키보드 1 / 2 로 선택
+  // 키보드 1~4 로 선택
   useEffect(() => {
     if (!current || chatSceneId || recordOpen) return undefined
     const handler = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (target && /input|textarea|select/i.test(target.tagName)) return
-      if (event.key === '1' || event.key === '2') {
+      if (/^[1-4]$/.test(event.key)) {
         const choice = current.choices[Number(event.key) - 1]
         if (choice) {
           event.preventDefault()
@@ -206,10 +210,11 @@ export function PlayPage() {
             <img src={cover} alt={`${novel.title} 표지`} />
           ) : (
             <div
-              className="carousel-cover-fallback"
+              className="play-cover-art"
               style={{ backgroundImage: `linear-gradient(150deg, ${novel.cover.from}, ${novel.cover.to})` }}
+              aria-hidden
             >
-              <span aria-hidden>{novel.cover.glyph}</span>
+              <span>{novel.cover.glyph}</span>
             </div>
           )}
         </div>
@@ -219,10 +224,14 @@ export function PlayPage() {
           <p className="play-intro-tagline">{novel.tagline}</p>
           <ul className="play-intro-rules">
             <li>
-              <b>{flow.scenes.length}번</b>의 양자택일 — 매 장면 끝에서 A/B를 고릅니다.
+              <b>{flow.scenes.length}장면</b>, 장면마다 <b>3~4개의 갈래</b> — 마음에 드는 문장을
+              고릅니다.
             </li>
-            <li>고른 즉시 <b>결과 문단</b>이 본문에 붙고 다음 장면이 열립니다.</li>
-            <li>장면 중간에 <b>캐릭터와 대화</b>하고, 대사를 소설로 가져올 수 있습니다.</li>
+            <li>고른 즉시 <b>결과 문단</b>이 본문에 붙고, 그 문장이 다음 장면으로 이어집니다.</li>
+            <li>
+              장면 중간 <b>말 걸기 좋은 자리</b>에서 인물과 대화합니다. 말을 걸면 그 행동과 대사가
+              소설에 그대로 들어갑니다.
+            </li>
             <li>
               마지막에 <b>{flow.endings.length}개의 엔딩</b> 중 하나 — 마지막 장면에서 고른 선택이
               엔딩을 정합니다.
@@ -243,6 +252,13 @@ export function PlayPage() {
           const isCurrent = sceneIndex === done && !ending
           const lines = appliedFor(activeSession, scene.id)
           const speaker = characters.find((item) => item.id === scene.speakerId) ?? characters[0]
+          const interaction = interactionFor(scene, speaker)
+          const anchor = interactionAnchorOf(scene)
+          const spoke = lines.length > 0
+          const openChat = (text?: string) => {
+            setChatSceneId(scene.id)
+            setChatSeed(text ?? null)
+          }
 
           return (
             <article
@@ -284,24 +300,76 @@ export function PlayPage() {
                   <p key={`lead-${index}`}>{paragraph}</p>
                 ))}
                 {scene.body.map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
-                ))}
+                  <Fragment key={`body-${index}`}>
+                    <p>{paragraph}</p>
+                    {index === anchor && (
+                      <>
+                        {spoke && (
+                          <div className="play-said" data-scene={scene.id}>
+                            <p className="play-said-label">
+                              ✍️ {withAndParticle(speaker?.name ?? '인물')} 나눈 말 — 소설에 들어감
+                            </p>
+                            {lines.map((line) =>
+                              line.kind === 'action' ? (
+                                <p className="play-said-action" key={line.id}>
+                                  {line.text}
+                                </p>
+                              ) : (
+                                <div
+                                  className="play-line"
+                                  key={line.id}
+                                  data-mine={line.kind === 'user'}
+                                >
+                                  <span className="play-line-who">
+                                    {line.kind === 'user' ? '나' : line.characterName}
+                                  </span>
+                                  <span className="play-line-text">{line.text}</span>
+                                  <button
+                                    type="button"
+                                    className="play-line-remove"
+                                    onClick={() =>
+                                      setSession(saveSession(removeAppliedLine(activeSession, line.id)))
+                                    }
+                                    aria-label="소설에서 이 대사 빼기"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        )}
 
-                {lines.map((line) => (
-                  <div className="play-line" key={line.id} data-mine={line.kind === 'user'}>
-                    <span className="play-line-who">
-                      {line.kind === 'user' ? '나' : line.characterName}
-                    </span>
-                    <span className="play-line-text">{line.text}</span>
-                    <button
-                      type="button"
-                      className="play-line-remove"
-                      onClick={() => setSession(saveSession(removeAppliedLine(activeSession, line.id)))}
-                      aria-label="소설에서 이 대사 빼기"
-                    >
-                      ✕
-                    </button>
-                  </div>
+                        {isCurrent && (
+                          <div className="speak-gate" data-spoke={spoke}>
+                            <p className="speak-gate-kicker">
+                              <span aria-hidden>💬</span> 지금 말 걸기 좋은 순간
+                            </p>
+                            <p className="speak-gate-cue">{interaction.cue}</p>
+                            <button
+                              type="button"
+                              className="speak-gate-open"
+                              onClick={() => openChat()}
+                            >
+                              {withAndParticle(speaker?.name ?? '인물')} 지금 말 걸기
+                              <em>소설에 반영됨</em>
+                            </button>
+                            <div className="speak-gate-prompts" aria-label="추천 대사">
+                              {interaction.prompts.map((prompt) => (
+                                <button
+                                  key={prompt}
+                                  type="button"
+                                  onClick={() => openChat(prompt)}
+                                >
+                                  {prompt.startsWith('“') ? prompt : `“${prompt}”`}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </Fragment>
                 ))}
               </div>
 
@@ -334,20 +402,24 @@ export function PlayPage() {
                         data-just-picked={justPicked === item.id}
                         onClick={() => choose(scene, item)}
                       >
-                        <span className="choice-key">{choiceIndex === 0 ? 'A' : 'B'}</span>
+                        <span className="choice-key" data-tone={item.tone}>
+                          {String.fromCharCode(65 + choiceIndex)}
+                        </span>
                         <span className="choice-label">{item.label}</span>
                         <span className="choice-hint">{item.hint}</span>
                       </button>
                     ))}
                   </div>
                   <div className="choice-foot">
-                    <span className="hidden sm:inline">키보드 1 · 2 로도 고를 수 있어요</span>
+                    <span className="hidden sm:inline">
+                      키보드 1 · 2 · 3 · {scene.choices.length} 로도 고를 수 있어요
+                    </span>
                     <button
                       type="button"
                       className="play-chat-inline"
-                      onClick={() => setChatSceneId(scene.id)}
+                      onClick={() => openChat()}
                     >
-                      💬 이 장면에서 {withAndParticle(speaker?.name ?? '등장인물')} 대화
+                      💬 {withAndParticle(speaker?.name ?? '등장인물')} 대화 — 소설에 반영
                     </button>
                   </div>
                 </div>
@@ -357,7 +429,7 @@ export function PlayPage() {
                 <button
                   type="button"
                   className="play-scene-chat"
-                  onClick={() => setChatSceneId(scene.id)}
+                  onClick={() => openChat()}
                 >
                   💬 {scene.no}장에서 {withAndParticle(speaker.name)} 나눈 대화 · 대사 가져오기
                 </button>
@@ -391,8 +463,8 @@ export function PlayPage() {
               <dd>{ending.name}</dd>
             </div>
             <div>
-              <dt>마지막 선택</dt>
-              <dd>{activeSession.picks[flow.scenes.length - 1]?.tone === 'A' ? 'A' : 'B'}</dd>
+              <dt>마지막 선택의 갈래</dt>
+              <dd>{activeSession.picks[flow.scenes.length - 1]?.tone}</dd>
             </div>
           </dl>
 
@@ -416,22 +488,6 @@ export function PlayPage() {
             이 작품에는 엔딩이 {flow.endings.length}개 있습니다.
           </p>
         </section>
-      )}
-
-      {/* 이 장면 대화 띄우기 */}
-      {current && !ending && (
-        <button
-          type="button"
-          className="play-chat-fab"
-          onClick={() => setChatSceneId(current.id)}
-          aria-label="이 장면에서 캐릭터와 대화하기"
-        >
-          <span aria-hidden>💬</span>
-          <span className="play-chat-fab-label">
-            {withAndParticle(characters.find((item) => item.id === current.speakerId)?.name ?? '캐릭터')}{' '}
-            대화
-          </span>
-        </button>
       )}
 
       {/* 선택 기록 */}
@@ -499,8 +555,16 @@ export function PlayPage() {
           characters={characters}
           picks={activeSession.picks}
           applied={appliedFor(activeSession, chatScene.id) as AppliedLine[]}
+          interaction={interactionFor(
+            chatScene,
+            characters.find((item) => item.id === chatScene.speakerId) ?? characters[0],
+          )}
+          initialText={chatSeed ?? undefined}
           onApply={applyLines(chatScene.id)}
-          onClose={() => setChatSceneId(null)}
+          onClose={() => {
+            setChatSceneId(null)
+            setChatSeed(null)
+          }}
         />
       )}
     </div>

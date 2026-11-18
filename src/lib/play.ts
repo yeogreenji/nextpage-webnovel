@@ -185,20 +185,36 @@ export function resolveEnding(flow: StoryFlow, session: PlaySession): PlayEnding
 }
 
 /** 앞선 선택의 결 — 엔딩 화면에서 여정을 한 줄로 되짚을 때 씁니다. */
-export function toneCounts(session: PlaySession): { a: number; b: number } {
+export function toneCounts(session: PlaySession): Record<'A' | 'B' | 'C', number> {
   return {
-    a: session.picks.filter((pick) => pick.tone === 'A').length,
-    b: session.picks.filter((pick) => pick.tone === 'B').length,
+    A: session.picks.filter((pick) => pick.tone === 'A').length,
+    B: session.picks.filter((pick) => pick.tone === 'B').length,
+    C: session.picks.filter((pick) => pick.tone === 'C').length,
   }
+}
+
+/** 이 장면에서 말을 걸 수 있는 지점 — 본문 몇 번째 문단 뒤인지 (0-based). */
+export function interactionAnchorOf(scene: PlayScene): number {
+  const last = Math.max(0, scene.body.length - 1)
+  const after = scene.interaction?.after
+  if (after === undefined) return last
+  return Math.max(0, Math.min(after, last))
 }
 
 /** n번째 장면(0-based) 앞에 붙는 이음 문단 — 직전 선택의 결에 따라 달라집니다. */
 export function leadOf(flow: StoryFlow, session: PlaySession, sceneIndex: number): string[] {
   if (sceneIndex <= 0) return []
-  const tone = session.picks[sceneIndex - 1]?.tone
+  const previousPick = session.picks[sceneIndex - 1]
+  const tone = previousPick?.tone
   const scene = flow.scenes[sceneIndex]
-  if (!tone || !scene?.lead) return []
-  return scene.lead[tone] ?? []
+  if (!tone || !scene) return []
+
+  // 선택지마다 행동이 다르므로, 그 선택에 붙은 이음 문단을 먼저 씁니다.
+  const previousScene = flow.scenes[sceneIndex - 1]
+  const pickedChoice = previousScene?.choices.find((choice) => choice.id === previousPick?.choiceId)
+  if (pickedChoice?.lead && pickedChoice.lead.length > 0) return pickedChoice.lead
+
+  return scene.lead?.[tone] ?? []
 }
 
 export function appliedFor(session: PlaySession, sceneId: string): AppliedLine[] {
@@ -257,7 +273,7 @@ export function removeAppliedLine(session: PlaySession, id: string): PlaySession
 
 /* ───────────────────────── 완성된 소설 ───────────────────────── */
 
-export type FinaleBlockKind = 'p' | 'pick' | 'say' | 'result'
+export type FinaleBlockKind = 'p' | 'pick' | 'say' | 'action' | 'result'
 
 export interface FinaleBlock {
   kind: FinaleBlockKind
@@ -283,6 +299,7 @@ export interface FinaleStats {
   endingName: string
   toneA: number
   toneB: number
+  toneC: number
   appliedByCharacter: { name: string; count: number }[]
 }
 
@@ -307,10 +324,21 @@ export function buildFinale(flow: StoryFlow, session: PlaySession): FinaleNovel 
     const blocks: FinaleBlock[] = []
 
     leadOf(flow, session, index).forEach((text) => blocks.push({ kind: 'p', text }))
-    scene.body.forEach((text) => blocks.push({ kind: 'p', text }))
 
-    appliedFor(session, scene.id).forEach((line) => {
-      blocks.push({ kind: 'say', text: line.text, who: line.characterName, mine: line.kind === 'user' })
+    // 말을 건 자리(interaction point)에 행동 요약과 대사가 그대로 놓입니다.
+    const anchor = interactionAnchorOf(scene)
+    const pushApplied = () => {
+      appliedFor(session, scene.id).forEach((line) => {
+        if (line.kind === 'action') {
+          blocks.push({ kind: 'action', text: line.text })
+        } else {
+          blocks.push({ kind: 'say', text: line.text, who: line.characterName, mine: line.kind === 'user' })
+        }
+      })
+    }
+    scene.body.forEach((text, bodyIndex) => {
+      blocks.push({ kind: 'p', text })
+      if (bodyIndex === anchor) pushApplied()
     })
 
     if (choice) {
@@ -321,10 +349,11 @@ export function buildFinale(flow: StoryFlow, session: PlaySession): FinaleNovel 
     return { id: scene.id, no: scene.no, title: scene.title, place: scene.place, blocks }
   })
 
-  const { a: toneA, b: toneB } = toneCounts(session)
+  const tones = toneCounts(session)
 
   const byCharacter = new Map<string, number>()
   session.applied.forEach((line) => {
+    if (line.kind === 'action') return
     byCharacter.set(line.characterName, (byCharacter.get(line.characterName) ?? 0) + 1)
   })
 
@@ -333,11 +362,12 @@ export function buildFinale(flow: StoryFlow, session: PlaySession): FinaleNovel 
     ending,
     stats: {
       picks: session.picks.length,
-      applied: session.applied.length,
+      applied: session.applied.filter((line) => line.kind !== 'action').length,
       scenes: flow.scenes.length,
       endingName: ending.name,
-      toneA,
-      toneB,
+      toneA: tones.A,
+      toneB: tones.B,
+      toneC: tones.C,
       appliedByCharacter: Array.from(byCharacter.entries())
         .map(([name, count]) => ({ name, count }))
         .sort((a, b) => b.count - a.count),

@@ -84,7 +84,19 @@ export function NovelPage() {
         </div>
         <div className="hero-band-scrim" />
         <div className="hero-band-art">
-          <img src={imageUrl(novel.heroImage ?? novel.coverImage)} alt="" aria-hidden />
+          {imageUrl(novel.heroImage ?? novel.coverImage) ? (
+            <img src={imageUrl(novel.heroImage ?? novel.coverImage)} alt="" aria-hidden />
+          ) : (
+            <div
+              className="hero-band-art-fallback"
+              aria-hidden
+              style={{
+                backgroundImage: `radial-gradient(120% 120% at 20% 0%, ${novel.cover.from}, ${novel.cover.to})`,
+              }}
+            >
+              <span>{novel.cover.glyph}</span>
+            </div>
+          )}
         </div>
 
         <div className="relative z-[2] flex flex-col sm:flex-row gap-5 sm:gap-8 p-5 sm:p-8">
@@ -138,7 +150,7 @@ export function NovelPage() {
                 </dd>
               </div>
               <div>
-                <dt style={{ color: 'rgba(255,250,247,0.5)' }}>양자택일</dt>
+                <dt style={{ color: 'rgba(255,250,247,0.5)' }}>선택 장면</dt>
                 <dd className="mt-0.5 font-extrabold text-[15px]">
                   {flow ? `${flow.scenes.length}번` : '-'}
                 </dd>

@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { AppliedLine, Character, ChatMessage, Novel, PlayPick, PlayScene } from '../types'
+import type {
+  AppliedLine,
+  Character,
+  ChatMessage,
+  Novel,
+  PlayPick,
+  PlayScene,
+  SceneInteraction,
+} from '../types'
 import { useStore } from '../store/StoreProvider'
 import {
   buildSceneChatRequest,
@@ -17,32 +25,45 @@ interface Props {
   characters: Character[]
   picks: PlayPick[]
   applied: AppliedLine[]
+  /** 이 장면의 말 걸기 지점 — 추천 대사와 행동 요약이 여기서 나옵니다. */
+  interaction: SceneInteraction
+  /** 말 걸기 지점에서 고른 추천 대사 — 입력창에 미리 채워 둡니다. */
+  initialText?: string
   /** 소설에 넣을 대사들 — 한 번에 여러 줄(티키타카)이 들어올 수 있습니다. */
   onApply: (
-    inputs: { text: string; kind: 'character' | 'user'; characterId: string; characterName: string }[],
+    inputs: {
+      text: string
+      kind: 'character' | 'user' | 'action'
+      characterId: string
+      characterName: string
+    }[],
   ) => void
   onClose: () => void
 }
 
-const SUGGESTIONS = [
-  '지금 이 장면, 어떻게 생각해요?',
-  '내가 방금 고른 선택, 괜찮았나요?',
-  '지금 무슨 생각 하고 있어요?',
-]
-
 /**
  * 💬 장면 중간 캐릭터 톡 + 「이 대사 소설에 적용하기」
+ * - 말을 걸면 그 행동과 첫 대사가 곧바로 소설 본문(말 걸기 지점)에 들어갑니다.
  * - 지금 읽고 있는 장면·내 선택을 기억하고 답합니다. (/api/chat, 실패 시 기기 안 응답)
- * - 마음에 드는 대사는 그 자리에서 소설 본문으로 옮겨집니다.
  */
-export function SceneChat({ novel, scene, characters, picks, applied, onApply, onClose }: Props) {
+export function SceneChat({
+  novel,
+  scene,
+  characters,
+  picks,
+  applied,
+  interaction,
+  initialText,
+  onApply,
+  onClose,
+}: Props) {
   const { notify } = useStore()
   const cast = characters.length > 0 ? characters : []
   const [activeId, setActiveId] = useState<string>(scene.speakerId ?? cast[0]?.id ?? '')
   const character = cast.find((item) => item.id === activeId) ?? cast[0]
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [input, setInput] = useState('')
+  const [input, setInput] = useState(initialText ?? '')
   const [sending, setSending] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -56,6 +77,10 @@ export function SceneChat({ novel, scene, characters, picks, applied, onApply, o
     const node = listRef.current
     if (node) node.scrollTop = node.scrollHeight
   }, [messages, sending])
+
+  useEffect(() => {
+    if (initialText) setInput(initialText)
+  }, [initialText])
 
   useEffect(() => {
     const timer = window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 220)
@@ -97,11 +122,32 @@ export function SceneChat({ novel, scene, characters, picks, applied, onApply, o
       if (!value || sending) return
 
       const history = messages
+      const firstTurn = history.length === 0
       const userMessage = makeMessage('user', value)
       const nextMessages = [...history, userMessage]
       setMessages(nextMessages)
       setInput('')
       setSending(true)
+
+      // 말을 걸었다는 사실 자체가 소설이 됩니다 —
+      // 행동 요약 한 문단과 내가 건넨 첫 대사가 말 걸기 지점에 바로 들어갑니다.
+      if (firstTurn) {
+        onApply([
+          {
+            text: interaction.action,
+            kind: 'action',
+            characterId: character.id,
+            characterName: character.name,
+          },
+          {
+            text: value,
+            kind: 'user',
+            characterId: character.id,
+            characterName: character.name,
+          },
+        ])
+        notify('말을 건 장면이 소설에 들어갔어요')
+      }
 
       try {
         saveSceneMessages(novel.id, scene.id, character.id, nextMessages)
@@ -137,6 +183,16 @@ export function SceneChat({ novel, scene, characters, picks, applied, onApply, o
         }
 
         const replyMessage = makeMessage('character', reply, source)
+        if (firstTurn) {
+          onApply([
+            {
+              text: reply,
+              kind: 'character',
+              characterId: character.id,
+              characterName: character.name,
+            },
+          ])
+        }
         setMessages((prev) => {
           const withReply = [...prev, replyMessage]
           saveSceneMessages(novel.id, scene.id, character.id, withReply)
@@ -148,7 +204,7 @@ export function SceneChat({ novel, scene, characters, picks, applied, onApply, o
         setSending(false)
       }
     },
-    [applied, character, messages, novel, notify, picks, scene, sending],
+    [applied, character, interaction.action, messages, novel, notify, onApply, picks, scene, sending],
   )
 
   if (!character) return null
@@ -169,6 +225,7 @@ export function SceneChat({ novel, scene, characters, picks, applied, onApply, o
               {character.name}
               <span>에게 지금 말 걸기</span>
             </p>
+            <p className="scene-chat-live">✍️ 여기서 나눈 말은 소설 본문에 그대로 들어갑니다</p>
           </div>
           <button type="button" className="scene-chat-close" onClick={onClose} aria-label="대화 닫기">
             ✕
@@ -210,8 +267,8 @@ export function SceneChat({ novel, scene, characters, picks, applied, onApply, o
                 {withSubjectParticle(character.name)} 지금 이 장면에 서 있습니다
               </p>
               <p className="scene-chat-empty-body">
-                “{scene.place}” — {scene.title}. 여기까지의 내 선택을 기억하고 {character.name}의 말투로
-                답합니다. 마음에 드는 대사는 그대로 소설에 넣어 보세요.
+                {interaction.cue} 여기까지의 내 선택을 기억하고 {character.name}의 말투로 답합니다. 아래
+                추천 대사 중 하나를 눌러도 좋아요.
               </p>
             </div>
           )}
@@ -275,15 +332,21 @@ export function SceneChat({ novel, scene, characters, picks, applied, onApply, o
           )}
         </div>
 
-        {messages.length === 0 && (
-          <div className="scene-chat-suggest">
-            {SUGGESTIONS.map((suggestion) => (
-              <button key={suggestion} type="button" onClick={() => void send(suggestion)}>
+        <div className="scene-chat-suggest" aria-label="추천 대사">
+          <span className="scene-chat-suggest-label">이 장면에서 건넬 말</span>
+          <div className="scene-chat-suggest-row">
+            {interaction.prompts.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                disabled={sending}
+                onClick={() => void send(suggestion)}
+              >
                 {suggestion}
               </button>
             ))}
           </div>
-        )}
+        </div>
 
         <form
           className="scene-chat-input"
@@ -307,8 +370,8 @@ export function SceneChat({ novel, scene, characters, picks, applied, onApply, o
 
         <p className="scene-chat-foot">
           {lastSource === 'offline'
-            ? 'AI 키가 연결되지 않아 기기 안의 장면 응답으로 대화하고 있어요. 적용한 대사는 소설에 그대로 남습니다.'
-            : '이 장면과 내 선택을 기억하고 답합니다. 「적용」을 누르면 본문에 대화 블록으로 들어갑니다.'}
+            ? 'AI 키가 연결되지 않아 기기 안의 장면 응답으로 대화하고 있어요. 말을 건 자리와 대사는 소설에 그대로 남습니다.'
+            : '말을 걸면 행동 요약과 첫 대사가 소설에 바로 들어갑니다. 이후 대사는 「적용」으로 골라 담으세요.'}
         </p>
       </aside>
     </>

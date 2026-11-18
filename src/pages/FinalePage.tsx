@@ -114,6 +114,13 @@ export function FinalePage() {
         </div>
       )
     }
+    if (block.kind === 'action') {
+      return (
+        <p className="finale-action" key={`action-${index}`}>
+          {block.text}
+        </p>
+      )
+    }
     if (block.kind === 'pick') {
       return (
         <p className="finale-pick" key={`pick-${index}`}>
@@ -164,8 +171,16 @@ export function FinalePage() {
 
       <header className="finale-title-page">
         <div className="finale-title-art" aria-hidden>
-          {imageUrl(novel.heroImage ?? novel.coverImage) && (
+          {imageUrl(novel.heroImage ?? novel.coverImage) ? (
             <img src={imageUrl(novel.heroImage ?? novel.coverImage)} alt="" />
+          ) : (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundImage: `radial-gradient(120% 120% at 18% 0%, ${novel.cover.from}, ${novel.cover.to})`,
+              }}
+            />
           )}
         </div>
         <div className="finale-title-inner">
@@ -228,8 +243,9 @@ export function FinalePage() {
             <h2>{finale.ending.name}</h2>
             <p className="finale-ending-kicker">{finale.ending.kicker}</p>
             <p className="finale-ending-tone">
-              여섯 번의 선택 중 A {finale.stats.toneA} · B {finale.stats.toneB}. 그중 마지막 한 번이 이
-              결말을 정했습니다.
+              {finale.stats.scenes}번의 선택 중 A {finale.stats.toneA} · B {finale.stats.toneB}
+              {finale.stats.toneC > 0 ? ` · C ${finale.stats.toneC}` : ''}. 그중 마지막 한 번이 이 결말을
+              정했습니다.
             </p>
           </header>
           <div className="reader-body finale-prose">

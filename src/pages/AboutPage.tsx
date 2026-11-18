@@ -10,7 +10,7 @@ export function AboutPage() {
       <h1 className="text-[24px] font-extrabold mt-1 tracking-tight">넥스트페이지 운영 안내</h1>
       <p className="mt-3 text-[13.5px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
         넥스트페이지는 <b>내가 선택하는 대로 소설이 완성되는</b> 인터랙티브 웹소설 플랫폼입니다.
-        작품마다 여섯 번의 양자택일과 두 개의 엔딩이 있고, 고른 문장이 곧 소설이 됩니다. 마지막에는
+        작품마다 여섯 장면, 장면마다 3~4개의 갈래, 그리고 세 개의 엔딩이 있습니다. 고른 문장이 곧 소설이 됩니다. 마지막에는
         내가 고른 분기와 내가 넣은 대사만으로 이뤄진 한 편의 소설을 읽습니다.
       </p>
 
@@ -18,7 +18,7 @@ export function AboutPage() {
         <h2 className="text-[15px] font-extrabold">내가 선택하는 대로 완성되는 소설</h2>
         <ol className="mt-3 grid gap-2.5 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
           <li>
-            <b>1.</b> 장면이 끝날 때마다 A/B 양자택일이 열립니다. 한 작품에 여섯 번.
+            <b>1.</b> 장면이 끝날 때마다 3~4개의 갈래가 열립니다. 한 작품에 여섯 장면.
           </li>
           <li>
             <b>2.</b> 고르는 즉시 그 결과가 본문에 붙고 다음 장면이 열립니다. 한 편의 소설이 그렇게
@@ -90,7 +90,7 @@ export function AboutPage() {
         <ul className="mt-2 grid gap-1.5 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
           <li>· 필명으로 연재해 주세요. 실명·소속이 드러나는 정보는 작품에 쓰지 않습니다.</li>
           <li>· 회차 본문은 빈 줄로 문단을 구분하면 읽기 화면에서 자연스럽게 나뉩니다.</li>
-          <li>· 선택지는 두 개(A/B)이며, 하나는 반드시 ‘다음 화’로 이어지도록 설계하는 편이 좋습니다.</li>
+          <li>· 선택지는 3~4개이며, 각 선택에는 ‘다음 화’로 이어지는 문장을 따로 설계하는 편이 좋습니다.</li>
           <li>· 투표 마감을 비워 두면 마감 없이 계속 참여할 수 있습니다.</li>
         </ul>
         <Link to="/studio" className="btn btn-primary btn-sm mt-4">

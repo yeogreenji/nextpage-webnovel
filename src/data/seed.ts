@@ -13,6 +13,7 @@ import { buildMemory } from './stories/memory'
 import { buildLodge } from './stories/lodge'
 import { buildOccult } from './stories/occult'
 import { fillPending } from './stories/filled'
+import { WAVE_EPISODES, WAVE_NOVELS } from './stories/wave'
 
 export interface SeedData {
   novels: Novel[]
@@ -790,6 +791,7 @@ export function buildSeed(nowMs = Date.now()): SeedData {
     ...memory.episodes,
     ...lodge.episodes,
     ...occult.episodes,
+    ...WAVE_EPISODES,
   ]
   const allEpisodes = fillPending(merged, nowMs)
 
@@ -808,6 +810,7 @@ export function buildSeed(nowMs = Date.now()): SeedData {
       memory.novel,
       lodge.novel,
       occult.novel,
+      ...WAVE_NOVELS,
     ],
     episodes: allEpisodes,
     comments: [

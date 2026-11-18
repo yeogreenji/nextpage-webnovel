@@ -133,7 +133,31 @@ export interface ChatMessage {
 
 /* ─────────────────── 인터랙티브 소설 (내가 쓰는 소설) ─────────────────── */
 
-/** 장면 끝에서 독자가 고르는 양자택일 */
+/* ─────────────────── 인터랙티브 소설 공용 ─────────────────── */
+
+/**
+ * 선택의 결 — 마지막 장면에서 고른 결이 그대로 엔딩이 됩니다.
+ * A/B는 대부분의 장면, C는 마지막 장면의 세 번째 갈래에 씁니다.
+ */
+export type ChoiceTone = 'A' | 'B' | 'C'
+
+/**
+ * 말 걸기 지점 — 장면 중간에서 인물과 대화를 시작하는 자리.
+ * 아무 때나 무는 버튼이 아니라, 본문의 특정 문단 바로 뒤에 붙습니다.
+ * 말을 걸면 이 지점에 행동 요약 + 대사가 소설 본문으로 들어갑니다.
+ */
+export interface SceneInteraction {
+  /** 본문 몇 번째 문단(0-based) 뒤에 말 걸기 지점을 둘지 */
+  after: number
+  /** 지금 말을 걸 만한 이유 — 배너에 한 줄로 노출 */
+  cue: string
+  /** 추천 대사 3~4개. 누르면 그대로 말을 겁니다. */
+  prompts: string[]
+  /** 말을 걸었을 때 본문에 남는 행동 문단. {name}은 인물 이름으로 바뀝니다. */
+  action: string
+}
+
+/** 장면 끝에서 독자가 고르는 선택지 (3~4개) */
 export interface PlayChoice {
   id: string
   /** 선택지 문구 — 소설의 문장처럼 적습니다 (예: '사물함 앞에서 그를 기다린다') */
@@ -143,10 +167,15 @@ export interface PlayChoice {
   /** 고른 직후 본문에 바로 붙는 결과 문단. 이 문장이 소설이 됩니다. */
   result: string[]
   /** 선택의 결 — 마지막에 도달할 엔딩을 가릅니다 */
-  tone: 'A' | 'B'
+  tone: ChoiceTone
+  /**
+   * 이 선택만의 다음 장면 이음 문단.
+   * 선택지마다 행동이 다르므로, 있으면 장면의 결(A/B) 이음 문단보다 먼저 씁니다.
+   */
+  lead?: string[]
 }
 
-/** 한 장면 = 한 번의 양자택일 */
+/** 한 장면 = 한 번의 선택 (3~4지선다) */
 export interface PlayScene {
   id: string
   /** 장면 번호 (1부터). 화면에는 '1장'으로 표시 */
@@ -160,13 +189,15 @@ export interface PlayScene {
    * 직전 장면에서 고른 결(A/B)에 따라 본문 앞에 붙는 이음 문단.
    * 앞선 선택의 결과가 이 장면의 첫머리에서 이어지도록 합니다.
    */
-  lead?: { A: string[]; B: string[] }
-  /** 정확히 두 개의 양자택일 */
+  lead?: Partial<Record<ChoiceTone, string[]>>
+  /** 3~4개의 선택지 */
   choices: PlayChoice[]
   /** 이 장면에서 대화할 인물 id (novel.characters 기준) */
   speakerId: string
   /** 장면 일러스트 (public 기준 경로) */
   image?: string
+  /** 말 걸기 지점 — 없으면 본문 마지막 문단 뒤에 기본 지점이 생깁니다 */
+  interaction?: SceneInteraction
 }
 
 /** 완성된 소설이 도달하는 엔딩 */
@@ -176,16 +207,16 @@ export interface PlayEnding {
   kicker: string
   body: string[]
   /**
-   * 마지막 장면에서 어떤 결(A/B)의 선택을 했을 때 닿는 엔딩인지.
-   * 엔딩은 마지막 선택의 결로만 정해지므로 A와 B 두 엔딩이 작품마다 하나씩 있어야 합니다.
+   * 마지막 장면에서 어떤 결의 선택을 했을 때 닿는 엔딩인지.
+   * 엔딩은 마지막 선택의 결로만 정해지므로, 마지막 장면의 갈래마다 엔딩이 하나씩 있어야 합니다.
    */
-  tone: 'A' | 'B'
+  tone: ChoiceTone
 }
 
 /** 한 작품의 인터랙티브 흐름 */
 export interface StoryFlow {
   novelId: string
-  /** 예: '여섯 번의 선택 · 두 개의 엔딩' */
+  /** 예: '여섯 장면 · 장면마다 3~4개의 갈래 · 세 개의 엔딩' */
   structure: string
   scenes: PlayScene[]
   endings: PlayEnding[]
@@ -196,7 +227,7 @@ export interface PlayPick {
   sceneId: string
   choiceId: string
   label: string
-  tone: 'A' | 'B'
+  tone: ChoiceTone
   at: string
 }
 
@@ -206,8 +237,8 @@ export interface AppliedLine {
   sceneId: string
   characterId: string
   characterName: string
-  /** 캐릭터가 한 말 / 독자가 건넨 말 */
-  kind: 'character' | 'user'
+  /** 캐릭터가 한 말 / 독자가 건넨 말 / 말을 건 행동 요약 */
+  kind: 'character' | 'user' | 'action'
   text: string
   at: string
 }
@@ -218,7 +249,7 @@ export interface PlaySession {
   picks: PlayPick[]
   applied: AppliedLine[]
   updatedAt: string
-  /** 마지막 양자택일까지 마친 시각 */
+  /** 마지막 선택까지 마친 시각 */
   endedAt: string | null
 }
 

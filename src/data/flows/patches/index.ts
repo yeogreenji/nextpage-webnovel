@@ -43,10 +43,13 @@ function patchScene(scene: PlayScene): PlayScene {
   const patch = PATCHES[scene.id]
   const body = patch?.body ?? scene.body
   const lead = patch?.lead ?? scene.lead
+  const builtLead = lead
+    ? Object.fromEntries(Object.entries(lead).map(([tone, lines]) => [tone, curlyAll(lines)]))
+    : undefined
   return {
     ...scene,
     body: curlyAll(body),
-    lead: lead ? { A: curlyAll(lead.A), B: curlyAll(lead.B) } : undefined,
+    lead: builtLead,
     choices: scene.choices.map((choice) => ({
       ...choice,
       label: curly(choice.label),

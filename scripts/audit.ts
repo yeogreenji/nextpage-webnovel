@@ -43,7 +43,8 @@ for (const n of seed.novels) {
       if (s.image && !pub(s.image)) warn(`장면 이미지 없음 ${s.id}`)
       if (!s.image) warn(`장면 이미지 미지정 ${s.id}`)
     }
-    if (flow.scenes.some((s) => s.choices.length !== 2)) warn('양자택일 아닌 장면')
+    if (flow.scenes.some((s) => s.choices.length < 3 || s.choices.length > 4)) warn('갈래 수가 3~4가 아닌 장면')
+    if (flow.endings.length !== 3) warn(`엔딩 ${flow.endings.length}개`)
   }
   console.log(out.splice(0).join('\n') || '  ok')
 }

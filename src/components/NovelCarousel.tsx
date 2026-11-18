@@ -245,7 +245,7 @@ export function NovelCarousel({ novels, publishedCount }: Props) {
 
                     <p className="carousel-hint">
                       {flow
-                        ? `${flow.structure} · 매 장면 끝에서 A/B를 고르면, 그 문장이 곧 소설이 됩니다.`
+                        ? `${flow.structure} · 매 장면에서 마음에 드는 문장을 고르면, 그 문장이 곧 소설이 됩니다.`
                         : '작품 정보에서 회차를 읽을 수 있습니다.'}
                     </p>
                   </div>

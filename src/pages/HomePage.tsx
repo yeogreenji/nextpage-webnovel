@@ -85,7 +85,7 @@ export function HomePage() {
       <dl className="stat-bar mt-6">
         {[
           { label: '작품', value: `${novels.length}편` },
-          { label: '양자택일 장면', value: `${sceneTotal}개` },
+          { label: '선택 장면', value: `${sceneTotal}개` },
           { label: '도달 가능한 엔딩', value: `${endingTotal}개` },
           { label: '등장인물', value: `${characterCount}인` },
         ].map((stat) => (
@@ -173,7 +173,7 @@ export function HomePage() {
             <p className="eyebrow">Feed · 표지 갤러리</p>
             <h2 className="section-title">연재 중인 작품</h2>
             <p className="mt-1.5 text-[12px]" style={{ color: 'var(--ink-mute)' }}>
-              모든 작품이 여섯 번의 양자택일과 두 개의 엔딩으로 이어집니다.
+              모든 작품이 여섯 장면, 매 장면 3~4개의 갈래, 그리고 세 개의 엔딩으로 이어집니다.
             </p>
           </div>
           <Link to="/library" className="text-[12px] font-bold" style={{ color: 'var(--accent)' }}>
@@ -216,18 +216,18 @@ export function HomePage() {
           {[
             {
               step: '01',
-              title: '장면마다 A/B를 고른다',
-              body: '한 작품에 양자택일이 여섯 번. 고른 즉시 그 결과가 본문에 붙고, 다음 장면이 열립니다.',
+              title: '장면마다 3~4개의 문장을 고른다',
+              body: '한 작품에 여섯 장면. 고른 즉시 그 결과가 본문에 붙고, 그 문장이 다음 장면으로 이어집니다.',
             },
             {
               step: '02',
-              title: '장면 속 인물과 대화한다',
-              body: '읽는 중간에 그 장면의 인물과 대화하세요. 마음에 드는 대사는 「소설에 적용」으로 본문에 들어갑니다.',
+              title: '장면 속 인물에게 말을 건다',
+              body: '말을 걸기 좋은 자리에서 인물과 대화하세요. 그 행동과 대사가 본문에 그대로 들어갑니다.',
             },
             {
               step: '03',
               title: '내 소설로 완성해 읽는다',
-              body: '마지막 선택까지 마치면, 내 분기와 내가 넣은 대사가 한 편의 소설로 묶입니다. 엔딩은 세 개.',
+              body: '마지막 선택까지 마치면, 내가 고른 갈래와 넣은 대사가 한 편의 소설로 묶입니다. 엔딩은 세 개.',
             },
           ].map((item) => (
             <div key={item.step} className="card p-5">
@@ -260,7 +260,7 @@ export function HomePage() {
               이 소설의 다음 문장은, 내가 쓴다
             </h2>
             <p className="mt-2 text-[12.5px] opacity-80">
-              고르고, 대화하고, 완성하세요. {novels.length}편 모두 여섯 번의 선택과 두 개의 엔딩으로
+              고르고, 말을 걸고, 완성하세요. {novels.length}편 모두 여섯 장면과 세 개의 엔딩으로
               이어집니다.
             </p>
           </div>
