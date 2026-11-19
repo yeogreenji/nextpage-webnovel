@@ -4,6 +4,12 @@ import {
   EXPANSION_CHOICE_ART,
   EXPANSION_SCENES,
 } from './art-expansion'
+import {
+  CHARACTER_ART,
+  WAVE_CHOICE_ART,
+  WAVE_EPISODE_SCENES,
+  WAVE_NOVEL_ART,
+} from './art-wave'
 
 /**
  * 일러스트 자산 인덱스.
@@ -25,6 +31,8 @@ interface NovelArt {
 }
 
 export const NOVEL_ART: Record<string, NovelArt> = {
+  // 2026 리뉴얼 신작 10편 (표지·히어로)
+  ...WAVE_NOVEL_ART,
   'nv-office': {
     cover: 'images/covers/nv-office.jpg',
     hero: 'images/covers/hero-office.jpg',
@@ -335,6 +343,7 @@ export const CHOICE_ART: Record<string, string> = {
   'ep-cafe-3a-a': 'images/scenes/story-cafe-2.jpg',
   'ep-cafe-3a-b': 'images/covers/hero-cafe.jpg',
   ...EXPANSION_CHOICE_ART,
+  ...WAVE_CHOICE_ART,
 }
 
 export type { InlineScene } from '../types'
@@ -560,6 +569,7 @@ export const EPISODE_SCENES: Record<string, InlineScene[]> = {
     },
   ],
   ...EXPANSION_SCENES,
+  ...WAVE_EPISODE_SCENES,
 }
 
 /** 문단 배열에 삽화 위치를 계산해 돌려줍니다. */
@@ -605,12 +615,19 @@ export function attachArt(
   return {
     novels: novels.map((novel) => {
       const art = NOVEL_ART[novel.id]
-      if (!art) return novel
+      const base = (novel.characters && novel.characters.length > 0 ? novel.characters : art?.characters) ?? []
+      // 데이터에 인물 그림이 비어 있으면 인물 id 로 자산을 붙입니다.
+      const characters = base.map((character) =>
+        character.image ? character : CHARACTER_ART[character.id] ? { ...character, image: CHARACTER_ART[character.id] } : character,
+      )
+      if (!art) {
+        return characters.length > 0 ? { ...novel, characters } : novel
+      }
       return {
         ...novel,
         coverImage: novel.coverImage ?? art.cover,
         heroImage: novel.heroImage ?? art.hero,
-        characters: novel.characters && novel.characters.length > 0 ? novel.characters : art.characters,
+        characters,
       }
     }),
     episodes: episodes.map((episode) => ({

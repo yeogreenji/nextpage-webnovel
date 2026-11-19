@@ -7,6 +7,7 @@ import { academyFlow, contractFlow, regressFlow } from './fantasy'
 import { cafeFlow, memoryFlow, murimFlow } from './drama'
 import { lodgeFlow, occultFlow, parcelFlow } from './thriller'
 import { WAVE_FLOWS } from '../stories/wave'
+import { SCENE_ART } from '../art-wave'
 
 /**
  * 인터랙티브 소설 흐름.
@@ -33,10 +34,22 @@ const BASE_FLOWS: StoryFlow[] = [
   occultFlow,
 ]
 
+/** 장면 일러스트가 비어 있으면 장면 id 로 자산을 붙입니다(신작·세 번째 갈래 포함). */
+function withSceneArt(flow: StoryFlow): StoryFlow {
+  return {
+    ...flow,
+    scenes: flow.scenes.map((scene) => {
+      if (scene.image) return scene
+      const image = SCENE_ART[scene.id]
+      return image ? { ...scene, image } : scene
+    }),
+  }
+}
+
 export const ALL_FLOWS: StoryFlow[] = [
   ...BASE_FLOWS.map(applyPatches).map(applyExtras),
   ...WAVE_FLOWS,
-]
+].map(withSceneArt)
 
 const FLOW_MAP: Record<string, StoryFlow> = Object.fromEntries(
   ALL_FLOWS.map((flow) => [flow.novelId, flow]),
