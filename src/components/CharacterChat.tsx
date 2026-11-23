@@ -1,11 +1,26 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { ChatMessage, Character, Episode, Novel } from '../types'
 import { useStore } from '../store/StoreProvider'
-import { buildChatRequest, clearMessages, loadMessages, makeMessage, offlineReply, saveMessages } from '../lib/chat'
+import {
+  CHAT_FAILURE_TEXT,
+  affinityOf,
+  buildChatRequest,
+  clearMessages,
+  loadMessages,
+  makeMessage,
+  offlineReply,
+  requestChat,
+  saveMessages,
+  suggestReplies,
+} from '../lib/chat'
+import type { ChatFailure } from '../lib/chat'
 import { describeChoices } from '../lib/story'
+import { allSessions } from '../lib/play'
 import { imageUrl } from '../data/art'
 import { withAndParticle } from '../lib/format'
+import { Icon } from './Icon'
+import { CHAT_FREE_TURNS, CHAT_UNLOCK, PASS, chatAccess, formatWon } from '../lib/commerce'
 
 interface Props {
   novel: Novel
@@ -15,28 +30,27 @@ interface Props {
   onClose?: () => void
 }
 
-const SUGGESTIONS = [
-  '지금 기분이 어때요?',
-  '다음 화에서 내 선택, 어떻게 될 것 같아요?',
-  '서로에게 솔직해져 볼까요?',
-]
-
 /**
  * 💬 캐릭터 톡 — 작품의 핵심 인물과 메신저처럼 대화합니다.
  * - Vercel 배포 시: /api/chat (Gemini → OpenAI 순서로 시도)
- * - GitHub Pages 등 정적 배포 시: 캐릭터별 성격이 살아 있는 상황 응답 (오프라인 폴백)
+ * - 정적 배포·AI 장애 시: 캐릭터별 성격이 살아 있는 상황 응답 (오프라인 폴백)
+ * - 호감도·기분은 이 기기에서 대화량으로 계산합니다.
  */
 export function CharacterChat({ novel, character, currentEpisode, onClose }: Props) {
-  const { episodes, votes, notify } = useStore()
+  const { episodes, votes, notify, wallet, hasPass, unlockCharacterChat, openPricing } = useStore()
   const [messages, setMessages] = useState<ChatMessage[]>(() =>
     loadMessages(novel.id, character.id),
   )
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [failure, setFailure] = useState<ChatFailure | null>(null)
+  const [retryText, setRetryText] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setMessages(loadMessages(novel.id, character.id))
+    setFailure(null)
+    setRetryText(null)
   }, [novel.id, character.id])
 
   useEffect(() => {
@@ -44,17 +58,36 @@ export function CharacterChat({ novel, character, currentEpisode, onClose }: Pro
     if (node) node.scrollTop = node.scrollHeight
   }, [messages, sending])
 
+  const lastPickLabel = useMemo(() => {
+    const session = allSessions()[novel.id]
+    const picks = session?.picks ?? []
+    return picks.length > 0 ? picks[picks.length - 1].label : null
+  }, [novel.id, messages.length])
+
+  const affinity = useMemo(
+    () => affinityOf({ messages, appliedCount: 0, picks: allSessions()[novel.id]?.picks.length ?? 0 }),
+    [messages, novel.id],
+  )
+
+  const suggestions = useMemo(
+    () => suggestReplies({ character, messages, lastPickLabel }),
+    [character, messages, lastPickLabel],
+  )
+
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, retry = false) => {
       const value = text.trim()
       if (!value || sending) return
 
-      const history = messages
-      const userMessage = makeMessage('user', value)
-      const nextMessages = [...history, userMessage]
+      // 실패 후 「다시 시도」는 내 메시지를 또 쌓지 않고, 마지막 메시지에 대한 답장만 다시 요청합니다.
+      const lastIsUser = messages[messages.length - 1]?.role === 'user'
+      const history = retry && lastIsUser ? messages.slice(0, -1) : messages
+      const nextMessages = retry && lastIsUser ? messages : [...messages, makeMessage('user', value)]
       setMessages(nextMessages)
       setInput('')
       setSending(true)
+      setFailure(null)
+      setRetryText(value)
 
       try {
         saveMessages(novel.id, character.id, nextMessages)
@@ -68,24 +101,12 @@ export function CharacterChat({ novel, character, currentEpisode, onClose }: Pro
           history,
         })
 
-        let reply: string | null = null
+        const result = await requestChat(request)
+        let reply = result.reply
         let source: ChatMessage['source'] = 'ai'
-        try {
-          const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(request),
-          })
-          if (response.ok) {
-            const data = (await response.json()) as { reply?: string }
-            reply = data.reply ?? null
-          }
-        } catch {
-          // 정적 배포(GitHub Pages)에서는 /api 가 없습니다. 폴백으로 계속합니다.
-        }
-
         if (!reply) {
           source = 'offline'
+          setFailure(result.failure)
           reply = offlineReply(
             character,
             value,
@@ -111,6 +132,8 @@ export function CharacterChat({ novel, character, currentEpisode, onClose }: Pro
 
   const avatar = imageUrl(character.image)
   const lastSource = [...messages].reverse().find((message) => message.role === 'character')?.source
+  const sentByUser = messages.filter((message) => message.role === 'user').length
+  const gate = chatAccess(character.id, wallet, sentByUser)
 
   return (
     <section className="chat" aria-label={`${character.name} 캐릭터 톡`}>
@@ -120,7 +143,10 @@ export function CharacterChat({ novel, character, currentEpisode, onClose }: Pro
         </span>
         <span className="min-w-0 flex-1">
           <span className="chat-name">{character.name}</span>
-          <span className="chat-role">{character.role}</span>
+          <span className="chat-role">
+            {character.role} · 대화 {sentByUser}번
+            {gate.viaPass ? ' · 패스 무제한' : gate.unlocked ? ' · 열람권' : ` · 무료 ${gate.freeTurnsLeft}번 남음`}
+          </span>
         </span>
         <button
           type="button"
@@ -128,6 +154,8 @@ export function CharacterChat({ novel, character, currentEpisode, onClose }: Pro
           onClick={() => {
             clearMessages(novel.id, character.id)
             setMessages([])
+            setFailure(null)
+            setRetryText(null)
             notify('대화를 지웠어요')
           }}
         >
@@ -139,6 +167,24 @@ export function CharacterChat({ novel, character, currentEpisode, onClose }: Pro
           </button>
         )}
       </header>
+
+      {/* 호감도 · 기분 */}
+      <div className="chat-tone" aria-label="호감도와 기분">
+        <span className="chat-tone-gauge">
+          <span className="chat-tone-line">
+            <span>
+              호감도 <b>{affinity.tier}</b>
+            </span>
+            <span>{affinity.score}/100</span>
+          </span>
+          <span className="chat-tone-meter" aria-hidden>
+            <span style={{ width: `${Math.max(3, affinity.score)}%` }} />
+          </span>
+        </span>
+        <span className="chat-mood-chip" title={affinity.mood}>
+          {affinity.mood}
+        </span>
+      </div>
 
       <div className="chat-thread" ref={listRef}>
         {messages.length === 0 && (
@@ -172,39 +218,93 @@ export function CharacterChat({ novel, character, currentEpisode, onClose }: Pro
         )}
       </div>
 
-      {messages.length === 0 && (
-        <div className="chat-suggest">
-          {SUGGESTIONS.map((suggestion) => (
-            <button key={suggestion} type="button" onClick={() => void send(suggestion)}>
-              {suggestion}
-            </button>
-          ))}
+      {failure && (
+        <div className="chat-retry" role="status">
+          <span>{CHAT_FAILURE_TEXT[failure]}</span>
+          <button type="button" onClick={() => retryText && void send(retryText, true)} disabled={sending}>
+            다시 시도
+          </button>
         </div>
       )}
 
-      <form
-        className="chat-input"
-        onSubmit={(event) => {
-          event.preventDefault()
-          void send(input)
-        }}
-      >
-        <input
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          placeholder={`${character.name}에게 말 걸기…`}
-          aria-label="메시지 입력"
-          maxLength={500}
-        />
-        <button type="submit" disabled={sending || input.trim().length === 0}>
-          보내기
-        </button>
-      </form>
+      {gate.allowed ? (
+        <>
+          {messages.length === 0 ? (
+            <div className="chat-suggest">
+              {suggestions.map((suggestion) => (
+                <button key={suggestion} type="button" onClick={() => void send(suggestion)}>
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="chat-suggest-active" aria-label="이어서 건넬 말">
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  disabled={sending}
+                  onClick={() => void send(suggestion)}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <form
+            className="chat-input"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void send(input)
+            }}
+          >
+            <input
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder={`${character.name}에게 말 걸기…`}
+              aria-label="메시지 입력"
+              maxLength={500}
+            />
+            <button type="submit" disabled={sending || input.trim().length === 0}>
+              보내기
+            </button>
+          </form>
+          <p className="chat-quota">
+            {gate.viaPass || gate.unlocked
+              ? '대화 제한 없이 이어갈 수 있어요.'
+              : `무료 대화 ${CHAT_FREE_TURNS}번 중 ${sentByUser}번 사용 — 이후 ${PASS.name} 또는 ${CHAT_UNLOCK.coins}코인`}
+          </p>
+        </>
+      ) : (
+        <div className="chat-gate">
+          <p className="chat-gate-kicker">
+            <Icon name="lock" size={14} /> 무료 대화 {CHAT_FREE_TURNS}번을 다 썼어요
+          </p>
+          <p className="chat-gate-body">
+            {withAndParticle(character.name)}의 대화를 이어가려면 {PASS.name}(전 작품·전 인물 무제한)나{' '}
+            {CHAT_UNLOCK.coins}코인으로 이 인물의 대화를 열 수 있습니다.
+          </p>
+          <div className="chat-gate-actions">
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => openPricing('pass')}>
+              {PASS.name} · {formatWon(PASS.price)}/월
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => unlockCharacterChat(character.id, character.name)}
+            >
+              {CHAT_UNLOCK.coins}코인으로 열기 ({wallet.coins}코인)
+            </button>
+          </div>
+          {hasPass && <p className="chat-gate-body">패스 이용 중에는 계속 대화할 수 있습니다.</p>}
+        </div>
+      )}
 
       <p className="chat-foot">
         {lastSource === 'offline'
           ? 'AI 키가 연결되지 않아 기기 안의 상황 응답으로 대화하고 있어요. 작품 맥락과 말투는 그대로입니다.'
-          : '작품 세계관과 내 선택지를 바탕으로 답장합니다. AI 응답은 실시간으로 만들어집니다.'}{' '}
+          : '작품 세계관과 내 선택지를 바탕으로 답장합니다. 대화는 이 기기에 저장됩니다.'}{' '}
         <Link to="/about" className="underline decoration-dotted underline-offset-4">
           자세히
         </Link>

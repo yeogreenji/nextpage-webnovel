@@ -17,12 +17,14 @@ export function formatRelative(iso: string, now = Date.now()): string {
 }
 
 export function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  const date = new Date(iso)
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const hours = date.getHours()
+  const meridiem = hours < 12 ? '오전' : '오후'
+  const displayHour = hours % 12 === 0 ? 12 : hours % 12
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${month}월 ${day}일 ${meridiem} ${displayHour}:${minutes}`
 }
 
 export interface Remaining {

@@ -10,12 +10,17 @@ import type {
 } from '../types'
 import { useStore } from '../store/StoreProvider'
 import {
+  CHAT_FAILURE_TEXT,
+  affinityOf,
   buildSceneChatRequest,
   loadSceneMessages,
   makeMessage,
+  requestChat,
   saveSceneMessages,
   sceneOfflineReply,
+  suggestReplies,
 } from '../lib/chat'
+import type { ChatFailure } from '../lib/chat'
 import { imageUrl } from '../data/art'
 import { withAndParticle, withSubjectParticle } from '../lib/format'
 
@@ -65,6 +70,8 @@ export function SceneChat({
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState(initialText ?? '')
   const [sending, setSending] = useState(false)
+  const [failure, setFailure] = useState<ChatFailure | null>(null)
+  const [retryText, setRetryText] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -81,6 +88,20 @@ export function SceneChat({
   useEffect(() => {
     if (initialText) setInput(initialText)
   }, [initialText])
+
+  const affinity = useMemo(
+    () => affinityOf({ messages, appliedCount: applied.length, picks: picks.length }),
+    [applied.length, messages, picks.length],
+  )
+
+  const lastPickLabel = picks.length > 0 ? picks[picks.length - 1].label : null
+  const extraSuggestions = useMemo(
+    () =>
+      messages.length === 0
+        ? []
+        : suggestReplies({ character, messages, lastPickLabel, scenePlace: scene.place }),
+    [character, lastPickLabel, messages, scene.place],
+  )
 
   useEffect(() => {
     const timer = window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 220)
@@ -116,13 +137,17 @@ export function SceneChat({
   )
 
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, retry = false) => {
       if (!character) return
       const value = text.trim()
       if (!value || sending) return
 
-      const history = messages
-      const firstTurn = history.length === 0
+      // 실패 후 「다시 시도」는 내 메시지를 또 쌓거나 소설에 다시 넣지 않고, 답장만 다시 요청합니다.
+      const lastIsUser = messages[messages.length - 1]?.role === 'user'
+      const history = retry && lastIsUser ? messages.slice(0, -1) : messages
+      const firstTurn = !retry && history.length === 0
+      setFailure(null)
+      setRetryText(value)
       const userMessage = makeMessage('user', value)
       const nextMessages = [...history, userMessage]
       setMessages(nextMessages)
@@ -161,24 +186,13 @@ export function SceneChat({
           history,
         })
 
-        let reply: string | null = null
+        const result = await requestChat(request)
+        let reply = result.reply
         let source: ChatMessage['source'] = 'ai'
-        try {
-          const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(request),
-          })
-          if (response.ok) {
-            const data = (await response.json()) as { reply?: string }
-            reply = data.reply ?? null
-          }
-        } catch {
-          // 정적 배포나 로컬 미리보기에서는 /api 가 없습니다. 폴백으로 계속합니다.
-        }
 
         if (!reply) {
           source = 'offline'
+          setFailure(result.failure)
           reply = sceneOfflineReply(character, value, scene, picks)
         }
 
@@ -231,6 +245,21 @@ export function SceneChat({
             ✕
           </button>
         </header>
+
+        <div className="chat-tone" aria-label="호감도와 기분">
+          <span className="chat-tone-gauge">
+            <span className="chat-tone-line">
+              <span>
+                {character.name} 호감도 <b>{affinity.tier}</b>
+              </span>
+              <span>{affinity.score}/100</span>
+            </span>
+            <span className="chat-tone-meter" aria-hidden>
+              <span style={{ width: `${Math.max(3, affinity.score)}%` }} />
+            </span>
+          </span>
+          <span className="chat-mood-chip">{affinity.mood}</span>
+        </div>
 
         <div className="scene-chat-cast" role="tablist" aria-label="대화할 인물">
           {cast.map((item) => {
@@ -331,6 +360,25 @@ export function SceneChat({
             </div>
           )}
         </div>
+
+        {failure && (
+          <div className="chat-retry" role="status">
+            <span>{CHAT_FAILURE_TEXT[failure]}</span>
+            <button type="button" onClick={() => retryText && void send(retryText, true)} disabled={sending}>
+              다시 시도
+            </button>
+          </div>
+        )}
+
+        {extraSuggestions.length > 0 && (
+          <div className="chat-suggest-active" aria-label="이어서 건넬 말">
+            {extraSuggestions.map((suggestion) => (
+              <button key={suggestion} type="button" disabled={sending} onClick={() => void send(suggestion)}>
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="scene-chat-suggest" aria-label="추천 대사">
           <span className="scene-chat-suggest-label">이 장면에서 건넬 말</span>

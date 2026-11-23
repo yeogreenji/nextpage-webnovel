@@ -2,40 +2,38 @@ import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
 import { allSessions } from '../lib/play'
+import { Icon } from './Icon'
+import { PricingModal } from './PricingModal'
 import type { ThemeName } from '../types'
 
 const NAV = [
-  { to: '/', label: '홈', glyph: '⌂', end: true },
-  { to: '/library', label: '작품', glyph: '▤', end: false },
-  { to: '/studio', label: '스튜디오', glyph: '✎', end: false },
-  { to: '/about', label: '소개', glyph: 'ⓘ', end: false },
+  { to: '/', label: '홈', end: true },
+  { to: '/library', label: '작품', end: false },
+  { to: '/shelf', label: '서재', end: false },
+  { to: '/studio', label: '스튜디오', end: false },
+  { to: '/about', label: '소개', end: false },
 ]
 
 const THEME_ORDER: ThemeName[] = ['light', 'sepia', 'dark']
 const THEME_LABEL: Record<ThemeName, string> = { light: '라이트', sepia: '세피아', dark: '다크' }
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { settings, setTheme, toast } = useStore()
+  const { settings, setTheme, toast, wallet, hasPass, passDays, openPricing } = useStore()
   const startedCount = Object.values(allSessions()).filter((session) => session.picks.length > 0).length
 
   return (
     <div className="min-h-dvh flex flex-col">
       <header className="site-header">
-        <div className="page-shell flex items-center justify-between gap-3 py-3">
-          <Link to="/" className="flex items-center gap-2.5 shrink-0">
+        <div className="page-shell header-bar">
+          <Link to="/" className="brand" aria-label="넥스트페이지 홈">
             <span className="brand-mark">NP</span>
-            <span className="flex flex-col leading-none">
-              <span className="text-[15px] font-extrabold tracking-tight">넥스트페이지</span>
-              <span
-                className="mt-1 text-[10px] font-semibold tracking-[0.16em] uppercase"
-                style={{ color: 'var(--ink-mute)' }}
-              >
-                Next Page
-              </span>
+            <span className="brand-copy">
+              <span className="brand-name">넥스트페이지</span>
+              <span className="brand-sub">NEXT PAGE</span>
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden md:flex items-center nav-list">
             {NAV.map((item) => (
               <NavLink key={item.to} to={item.to} end={item.end} className="nav-link whitespace-nowrap">
                 {({ isActive }) => <span data-active={isActive}>{item.label}</span>}
@@ -43,90 +41,119 @@ export function Layout({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
-            <Link
-              to="/library"
-              className="chip hidden sm:inline-flex"
-              title="이 기기에서 쓰기 시작한 소설 수"
-            >
-              내 소설 {startedCount}
+          <div className="header-tools">
+            <Link to="/shelf" className="header-shelf" title="이 기기에서 쓰기 시작한 소설 수">
+              서재 <b>{startedCount}</b>
             </Link>
-            <div className="hidden md:flex segmented">
+
+            <button
+              type="button"
+              className="wallet-pill"
+              onClick={() => openPricing('coin')}
+              aria-label={`보유 코인 ${wallet.coins}, 대여권 ${wallet.tickets}장 — 충전소 열기`}
+            >
+              <span className="wallet-item">
+                <Icon name="coin" size={14} />
+                {wallet.coins}
+              </span>
+              <span className="wallet-divider" aria-hidden />
+              <span className="wallet-item">
+                <Icon name="ticket" size={14} />
+                {wallet.tickets}
+              </span>
+              {hasPass && (
+                <>
+                  <span className="wallet-divider" aria-hidden />
+                  <span className="wallet-item wallet-pass">패스 D-{passDays}</span>
+                </>
+              )}
+            </button>
+
+            <button type="button" className="btn btn-primary btn-sm charge-btn" onClick={() => openPricing('coin')}>
+              충전
+            </button>
+
+            <div className="hidden md:flex theme-switch" role="group" aria-label="화면 테마">
               {THEME_ORDER.map((theme) => (
                 <button
                   key={theme}
                   type="button"
                   data-active={settings.theme === theme}
                   onClick={() => setTheme(theme)}
+                  aria-pressed={settings.theme === theme}
                 >
                   {THEME_LABEL[theme]}
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              className="md:hidden btn btn-secondary btn-sm"
-              onClick={() => {
-                const index = THEME_ORDER.indexOf(settings.theme)
-                setTheme(THEME_ORDER[(index + 1) % THEME_ORDER.length])
-              }}
-              aria-label={`배경 테마 변경 (현재 ${THEME_LABEL[settings.theme]})`}
-            >
-              {THEME_LABEL[settings.theme]}
-            </button>
+            <div className="md:hidden">
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => {
+                  const index = THEME_ORDER.indexOf(settings.theme)
+                  setTheme(THEME_ORDER[(index + 1) % THEME_ORDER.length])
+                }}
+                aria-label={`배경 테마 변경 (현재 ${THEME_LABEL[settings.theme]})`}
+              >
+                {THEME_LABEL[settings.theme]}
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="flex-1 pb-16 md:pb-0">{children}</main>
 
-      <footer className="mt-16 border-t" style={{ borderColor: 'var(--line)' }}>
-        <div className="page-shell py-10 flex flex-col gap-3 text-[12px]" style={{ color: 'var(--ink-mute)' }}>
-          <p className="font-bold" style={{ color: 'var(--ink-soft)' }}>
-            넥스트페이지 · 다음 화는, 당신이 고른다
-          </p>
-          <p>
-            수록된 작품·인물·필명은 모두 가상이며, 표지·인물·장면 일러스트도 AI로 생성한 가상의
-            이미지입니다. 내가 고른 분기·소설에 넣은 대사·댓글은 이 기기에만 저장되며, 서버를
-            연결하면 다른 독자의 루트와도 이어갈 수 있습니다.
-          </p>
-          <p>
-            React · TypeScript · Vite · Tailwind CSS로 만들었습니다. ·{' '}
-            <Link to="/about" className="underline decoration-dotted underline-offset-4">
-              운영 안내
-            </Link>
+      <footer className="site-footer">
+        <div className="page-shell footer-inner">
+          <div>
+            <p className="footer-brand">넥스트페이지</p>
+            <p className="footer-line">다음 화는, 당신이 고른다.</p>
+          </div>
+          <div className="footer-cols">
+            <div>
+              <p className="footer-head">작품</p>
+              <Link to="/library">전체 작품</Link>
+              <Link to="/library?curation=romance">로맨스</Link>
+              <Link to="/library?curation=fantasy-romance">로맨스 판타지</Link>
+              <Link to="/library?genre=미스터리">미스터리</Link>
+            </div>
+            <div>
+              <p className="footer-head">이용</p>
+              <button type="button" onClick={() => openPricing('pass')}>
+                넥스트패스
+              </button>
+              <button type="button" onClick={() => openPricing('coin')}>
+                코인 충전
+              </button>
+              <Link to="/shelf">내 서재</Link>
+              <Link to="/about">운영 안내</Link>
+            </div>
+            <div>
+              <p className="footer-head">안내</p>
+              <p className="footer-note">
+                수록된 작품·인물·필명은 모두 가상이며, 표지·인물·장면 일러스트도 AI로 생성한 가상의
+                이미지입니다.
+              </p>
+            </div>
+          </div>
+          <p className="footer-legal">
+            넥스트페이지 · 선택형 웹소설 · React · TypeScript · Vite · Tailwind CSS로 만들었습니다.
+            내가 고른 분기·대사·댓글은 이 기기에만 저장됩니다.
           </p>
         </div>
       </footer>
 
       {/* 모바일 하단 내비게이션 */}
-      <nav
-        className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t"
-        style={{
-          borderColor: 'var(--line)',
-          background: 'color-mix(in srgb, var(--bg) 92%, transparent)',
-          backdropFilter: 'blur(14px)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
-        }}
-      >
-        <div className="grid grid-cols-4">
+      <nav className="mobile-nav md:hidden">
+        <div className="grid grid-cols-5">
           {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} className="py-2.5 flex flex-col items-center gap-1">
+            <NavLink key={item.to} to={item.to} end={item.end} className="mobile-nav-link">
               {({ isActive }) => (
                 <>
-                  <span
-                    aria-hidden
-                    className="text-[15px] leading-none"
-                    style={{ color: isActive ? 'var(--accent)' : 'var(--ink-mute)' }}
-                  >
-                    {item.glyph}
-                  </span>
-                  <span
-                    className="text-[10.5px] font-bold"
-                    style={{ color: isActive ? 'var(--accent)' : 'var(--ink-mute)' }}
-                  >
-                    {item.label}
-                  </span>
+                  <span className="mobile-nav-dot" data-active={isActive} aria-hidden />
+                  <span data-active={isActive}>{item.label}</span>
                 </>
               )}
             </NavLink>
@@ -134,6 +161,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
       </nav>
 
+      <PricingModal />
       {toast && <div className="toast">{toast}</div>}
     </div>
   )

@@ -29,7 +29,7 @@ export const DEFAULT_SETTINGS: ReaderSettings = {
 }
 
 /** 시드 콘텐츠 버전 — 새 작품·회차를 기존 저장분 위에 얹을 때 씁니다. */
-const SEED_VERSION = 8
+const SEED_VERSION = 9
 
 const KEYS = {
   novels: 'np.novels.v1',
@@ -59,6 +59,18 @@ function write(key: string, value: unknown): void {
   }
 }
 
+/**
+ * 시드 연재본이 기존 저장분보다 확실히 길고, 같은 문단에서 시작하면 '내용 개고'로 봅니다.
+ * - 기존 독자의 투표·댓글·진행은 그대로 두고 본문만 새 연재본으로 바꿉니다.
+ * - 스튜디오에서 직접 쓴 글은 첫 문단이 시드와 달라 교체되지 않습니다.
+ */
+function isContentUpgrade(stored: Episode, fresh: Episode): boolean {
+  if (stored.status !== 'published' || fresh.status !== 'published') return false
+  if (fresh.body.length < stored.body.length + 200) return false
+  const head = stored.body.trim().slice(0, 80)
+  return head.length > 0 && fresh.body.includes(head)
+}
+
 function readSettings(): ReaderSettings {
   const stored = read<Partial<ReaderSettings>>(KEYS.settings)
   return { ...DEFAULT_SETTINGS, ...(stored ?? {}) }
@@ -82,7 +94,21 @@ function mergeSeedContent(): void {
   const nextEpisodes = storedEpisodes.map((episode) => {
     const fresh = seedEpisodes.get(episode.id)
     if (!fresh) return episode
-    return episode.status === 'pending' && fresh.status === 'published' ? fresh : episode
+    // 집필 중이던 회차가 정식 연재로 바뀌면 새 본문으로 교체합니다.
+    if (episode.status === 'pending' && fresh.status === 'published') return fresh
+    // 연재본이 더 길어졌으면(상용 분량 개고) 새 본문·갈래로 교체합니다.
+    // 사용자가 스튜디오에서 직접 고친 글은 첫 문단이 달라지므로 건드리지 않습니다.
+    if (isContentUpgrade(episode, fresh)) {
+      return {
+        ...episode,
+        body: fresh.body,
+        choices: fresh.choices.map((choice) => {
+          const previous = episode.choices.find((item) => item.id === choice.id)
+          return previous ? { ...choice, baseVotes: previous.baseVotes } : choice
+        }),
+      }
+    }
+    return episode
   })
   seed.episodes.forEach((episode) => {
     if (!storedEpisodeIds.has(episode.id)) nextEpisodes.push(episode)

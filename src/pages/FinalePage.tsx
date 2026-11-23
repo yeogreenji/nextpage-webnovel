@@ -5,6 +5,7 @@ import { flowFor } from '../data/flows'
 import { imageUrl } from '../data/art'
 import { ReaderToolbar } from '../components/ReaderToolbar'
 import { ReadingProgress } from '../components/ReadingProgress'
+import { unlockEnding } from '../lib/library'
 import {
   buildFinale,
   clearSession,
@@ -60,6 +61,10 @@ export function FinalePage() {
     [flow, session, tick],
   )
   const progress = progressOf(flow, session)
+
+  useEffect(() => {
+    if (finale && novel) unlockEnding(novel.id, finale.ending)
+  }, [finale, novel])
 
   if (!ready) {
     return (
@@ -231,7 +236,7 @@ export function FinalePage() {
             <div className="reader-body finale-prose">{chapter.blocks.map(renderBlock)}</div>
             {chapterIndex < finale.chapters.length - 1 && (
               <div className="finale-divider" aria-hidden>
-                <span>❖</span>
+                <span aria-hidden>·</span>
               </div>
             )}
           </section>
@@ -255,7 +260,7 @@ export function FinalePage() {
           </div>
           <div className="finale-end-mark" aria-hidden>
             <span />
-            <b>❖</b>
+            <b aria-hidden>·</b>
             <span />
           </div>
         </section>

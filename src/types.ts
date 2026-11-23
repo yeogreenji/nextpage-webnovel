@@ -99,7 +99,7 @@ export interface VoteRecord {
   votedAt: string
 }
 
-export type ReaderFont = 'serif' | 'sans'
+export type ReaderFont = 'serif' | 'sans' | 'maru'
 
 export interface ReaderSettings {
   theme: ThemeName
@@ -107,7 +107,7 @@ export interface ReaderSettings {
   fontSize: number
   /** 본문 줄간격 (1.6 ~ 2.4) */
   lineHeight: number
-  /** 본문 서체 — 명조(serif) / 고딕(sans) */
+  /** 본문 서체 — 명조(serif) / 고딕(sans) / 마루부리(maru) */
   font: ReaderFont
 }
 

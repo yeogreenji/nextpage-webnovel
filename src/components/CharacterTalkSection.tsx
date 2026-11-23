@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import type { Character, Episode, Novel } from '../types'
 import { CharacterChat } from './CharacterChat'
+import { Icon } from './Icon'
 import { imageUrl } from '../data/art'
+import { CHAT_FREE_TURNS } from '../lib/commerce'
 
 interface Props {
   novel: Novel
@@ -25,13 +27,15 @@ export function CharacterTalkSection({ novel, characters, initialCharacterId, cu
       <div className="section-head">
         <div>
           <p className="eyebrow">Character Talk</p>
-          <h2 className="section-title">💬 캐릭터 톡</h2>
-          <p className="mt-1.5 text-[12px]" style={{ color: 'var(--ink-mute)' }}>
+          <h2 className="section-title">캐릭터 톡</h2>
+          <p className="section-sub">
             이 작품의 인물과 직접 대화하세요. 세계관과 내가 고른 선택지를 기억하고, 인물의 말투로
-            답장합니다.
+            답장합니다. 인물당 {CHAT_FREE_TURNS}번까지 무료, 이후 넥스트패스로 무제한입니다.
           </p>
         </div>
-        <span className="chip chip-accent">{characters.length}명과 대화 가능</span>
+        <span className="chip chip-accent">
+          <Icon name="chat" size={13} /> {characters.length}명
+        </span>
       </div>
 
       <div className="chat-tabs" role="tablist" aria-label="대화할 캐릭터 선택">

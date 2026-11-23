@@ -1,8 +1,18 @@
 import { Link } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
+import {
+  CHAT_FREE_TURNS,
+  CHAT_UNLOCK,
+  EPISODE_PRICE,
+  FREE_EPISODE_NO,
+  PASS,
+  WAIT_FREE_EPISODE_NO,
+  WAIT_FREE_HOURS,
+  formatWon,
+} from '../lib/commerce'
 
 export function AboutPage() {
-  const { resetAll, notify, votes } = useStore()
+  const { resetAll, notify, votes, openPricing, hasPass, passDays } = useStore()
 
   return (
     <div className="page-shell pt-8 max-w-[760px]">
@@ -42,11 +52,68 @@ export function AboutPage() {
       <section className="card p-5 mt-4">
         <h2 className="text-[15px] font-extrabold">회차 읽기와 캐릭터 톡</h2>
         <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-          회차 화면의 <b>📖 소설로 쭉 읽기</b> 버튼을 누르면 선택지 없이 내가 고른 분기가 한 편의
-          웹소설로 이어집니다. 작품 페이지의 <b>💬 캐릭터 톡</b>에서는 등장인물과 직접 대화할 수 있고,
+          회차 화면의 <b>소설로 쭉 읽기</b> 버튼을 누르면 선택지 없이 내가 고른 분기가 한 편의
+          웹소설로 이어집니다. 작품 페이지의 <b>캐릭터 톡</b>에서는 등장인물과 직접 대화할 수 있고,
           인물은 작품 세계관과 내가 고른 선택지를 기억합니다. AI 키가 연결된 배포에서는 실시간
           응답으로, 연결되지 않은 배포에서는 기기 안의 상황 응답으로 대화합니다. 캐릭터 톡의 대화
           기록은 이 기기에만 저장되며, 대화 지우기 버튼으로 언제든 지울 수 있습니다.
+        </p>
+      </section>
+
+      <section className="card p-5 mt-4" id="pricing">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <h2 className="text-[15px] font-extrabold">요금과 열람</h2>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => openPricing('pass')}>
+            충전소 열기
+          </button>
+        </div>
+        <dl className="mt-3 grid gap-2.5 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
+          <div className="flex gap-2">
+            <dt className="shrink-0 w-[92px] font-bold" style={{ color: 'var(--ink)' }}>
+              무료 회차
+            </dt>
+            <dd>작품마다 {FREE_EPISODE_NO}화까지 무료입니다. 가입 없이 바로 읽습니다.</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="shrink-0 w-[92px] font-bold" style={{ color: 'var(--ink)' }}>
+              기다무
+            </dt>
+            <dd>
+              {WAIT_FREE_EPISODE_NO}화는 기다무입니다. 신청하고 {WAIT_FREE_HOURS}시간 뒤 무료로 열립니다.
+            </dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="shrink-0 w-[92px] font-bold" style={{ color: 'var(--ink)' }}>
+              유료 회차
+            </dt>
+            <dd>
+              {WAIT_FREE_EPISODE_NO}화 이후는 대여권 1장 또는 {EPISODE_PRICE.coins}코인입니다.
+              (1코인 = 100원)
+            </dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="shrink-0 w-[92px] font-bold" style={{ color: 'var(--ink)' }}>
+              {PASS.name}
+            </dt>
+            <dd>
+              월 {formatWon(PASS.price)}로 전 작품 유료 회차·기다무·캐릭터 톡을 무제한으로 읽습니다.{' '}
+              {PASS.trialDays}일 무료 체험을 한 번 쓸 수 있습니다.
+            </dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="shrink-0 w-[92px] font-bold" style={{ color: 'var(--ink)' }}>
+              캐릭터 톡
+            </dt>
+            <dd>
+              인물당 {CHAT_FREE_TURNS}번까지 무료, 이후 패스 또는 {CHAT_UNLOCK.coins}코인으로 그
+              인물의 대화를 엽니다.
+            </dd>
+          </div>
+        </dl>
+        <p className="mt-3 text-[11.5px] leading-relaxed" style={{ color: 'var(--ink-mute)' }}>
+          결제는 아직 결제선(PG) 연동 전 데모입니다. 충전·열람 기록은 이 기기의 지갑
+          (<code className="chip">np.wallet.v1</code>)에만 남고 실제 청구는 이뤄지지 않습니다.
+          {hasPass ? ` 지금은 ${PASS.name} 이용 중(D-${passDays})입니다.` : ''}
         </p>
       </section>
 
@@ -54,7 +121,8 @@ export function AboutPage() {
         <h2 className="text-[15px] font-extrabold">데이터는 어디에 저장되나요</h2>
         <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
           현재 버전은 서버 없이 동작합니다. 내가 고른 분기, 소설에 넣은 대사, 한 줄 댓글, 읽기 설정,
-          작가 스튜디오에서 발행한 회차가 모두 <b>이 브라우저(이 기기)</b>에만 저장됩니다. 캐릭터 톡의
+          작가 스튜디오에서 발행한 회차, 코인·대여권 지갑이 모두 <b>이 브라우저(이 기기)</b>에만
+          저장됩니다. 캐릭터 톡의
           AI 응답만 배포에 연결된 키로 실시간 생성됩니다. 브라우저 저장소를 지우면 기록도 함께
           사라집니다.
         </p>
@@ -106,13 +174,13 @@ export function AboutPage() {
           <code className="chip">public/images/</code> 아래에 있습니다.
         </p>
         <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-          지금 들어 있는 그림은 표지 15종과 키 비주얼 15종, 인물 카드 60인, 선택지 장면과 회차
-          본문 삽화 70컷입니다. 본문 삽화는 줄거리의 결정적인 장면에서 한 번씩 크게
-          펼쳐지고, 작품 페이지의 <b>명장면 일러스트 갤러리</b>에서 모아 볼 수 있습니다.
+          지금 들어 있는 그림은 표지 25종과 키 비주얼 25종, 인물 카드 100인, 장면 그림 126컷입니다.
+          본문 삽화는 줄거리의 결정적인 장면에서 한 번씩 크게 펼쳐지고, 작품 페이지의
+          <b>명장면 일러스트 갤러리</b>에서 모아 볼 수 있습니다.
         </p>
         <p className="mt-2 text-[13px] leading-relaxed" style={{ color: 'var(--ink-soft)' }}>
-          읽기 화면은 라이트·세피아·다크 세 가지 배경을 제공하고, 플랫폼 기본 화면은 어두운
-          플럼·옵시디언 바탕에 로즈·인디고 포인트를 쓰는 다크 테마로 시작합니다.
+          화면은 종이빛 흰색 바탕에 먹색 글자, 짙은 버건디 포인트를 쓰는 라이트 테마로
+          시작합니다. 읽기 화면과 머리말에서 라이트·세피아·다크 세 가지 배경을 고를 수 있습니다.
         </p>
       </section>
 

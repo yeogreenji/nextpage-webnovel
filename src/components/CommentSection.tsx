@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../store/StoreProvider'
 import { formatRelative } from '../lib/format'
+import { Icon } from './Icon'
 
 interface Props {
   novelId: string
@@ -120,7 +121,7 @@ export function CommentSection({ novelId, episodeId }: Props) {
                 style={{ color: liked ? 'var(--accent)' : 'var(--ink-mute)' }}
                 aria-pressed={liked}
               >
-                {liked ? '♥' : '♡'} 공감 {comment.likes}
+                <Icon name={liked ? 'heartFilled' : 'heart'} size={12} /> 공감 {comment.likes}
               </button>
             </li>
           )

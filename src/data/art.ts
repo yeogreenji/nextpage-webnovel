@@ -10,6 +10,7 @@ import {
   WAVE_EPISODE_SCENES,
   WAVE_NOVEL_ART,
 } from './art-wave'
+import { WAVE_DEEP_SCENES } from './stories/wave/deep'
 
 /**
  * 일러스트 자산 인덱스.
@@ -570,6 +571,7 @@ export const EPISODE_SCENES: Record<string, InlineScene[]> = {
   ],
   ...EXPANSION_SCENES,
   ...WAVE_EPISODE_SCENES,
+  ...WAVE_DEEP_SCENES,
 }
 
 /** 문단 배열에 삽화 위치를 계산해 돌려줍니다. */

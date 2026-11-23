@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Character } from '../types'
 import { imageUrl } from '../data/art'
+import { Icon } from './Icon'
 
 export interface SpotlightItem {
   character: Character
@@ -42,12 +43,12 @@ export function CharacterSpotlight({ items }: { items: SpotlightItem[] }) {
       <div className="section-head flex-wrap">
         <div>
           <p className="eyebrow">Character Spotlight</p>
-          <h2 className="section-title">✨ 인기 캐릭터 스포트라이트</h2>
-          <p className="mt-1.5 text-[12px]" style={{ color: 'var(--ink-mute)' }}>
+          <h2 className="section-title">인기 캐릭터 스포트라이트</h2>
+          <p className="section-sub">
             남주·여주부터 서브남주, 라이벌까지 — 카드를 누르면 그 인물의 이야기로 바로 갑니다.
           </p>
         </div>
-        <span className="chip chip-accent hidden sm:inline-flex">총 {items.length}명</span>
+        <span className="chip hidden sm:inline-flex">총 {items.length}명</span>
       </div>
 
       <div className="spot-toolbar mb-2" role="tablist" aria-label="작품별 캐릭터 필터">
@@ -77,7 +78,7 @@ export function CharacterSpotlight({ items }: { items: SpotlightItem[] }) {
           onClick={() => scrollRail(-1)}
           aria-label="이전 캐릭터"
         >
-          ‹
+          <Icon name="chevronLeft" size={16} />
         </button>
         <div className="spot-rail" ref={railRef}>
           {visible.map(({ character, novelId, novelTitle, workLabel }) => {
@@ -127,7 +128,7 @@ export function CharacterSpotlight({ items }: { items: SpotlightItem[] }) {
           onClick={() => scrollRail(1)}
           aria-label="다음 캐릭터"
         >
-          ›
+          <Icon name="chevronRight" size={16} />
         </button>
       </div>
     </section>

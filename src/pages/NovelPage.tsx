@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
 import { BranchTree } from '../components/BranchTree'
@@ -12,11 +12,15 @@ import { imageUrl, scenesForEpisodes } from '../data/art'
 import { flowFor } from '../data/flows'
 import { allSessions, progressOf } from '../lib/play'
 import type { Episode } from '../types'
+import { endingProgress, isOnShelf, readingOf, toggleShelf } from '../lib/library'
+import { pricingSummary, episodeAccess, accessBadge, FREE_EPISODE_NO } from '../lib/commerce'
+import { Icon } from '../components/Icon'
 
 export function NovelPage() {
   const { novelId = '' } = useParams()
   const location = useLocation()
-  const { ready, novels, episodes, votes } = useStore()
+  const { ready, novels, episodes, votes, notify, wallet } = useStore()
+  const [shelfOn, setShelfOn] = useState(() => (novelId ? isOnShelf(novelId) : false))
   const novel = novels.find((item) => item.id === novelId)
   const episodesOfNovel = episodes.filter((item) => item.novelId === novelId)
   const published = episodesOfNovel
@@ -62,6 +66,8 @@ export function NovelPage() {
   }
 
   const flow = flowFor(novel.id)
+  const reading = readingOf(novel.id)
+  const codex = endingProgress(novel.id, flow)
   const playSession = allSessions()[novel.id]
   const playProgress = progressOf(flow, playSession ?? null)
   const first = published.find((item) => item.id === novel.startEpisodeId) ?? published[0]
@@ -99,118 +105,120 @@ export function NovelPage() {
           )}
         </div>
 
-        <div className="relative z-[2] flex flex-col sm:flex-row gap-5 sm:gap-8 p-5 sm:p-8">
-          <div
-            className="w-[136px] sm:w-[182px] shrink-0 rounded-2xl overflow-hidden self-start"
-            style={{ boxShadow: '0 30px 60px -30px rgba(0,0,0,0.9)', border: '1px solid rgba(255,255,255,0.16)' }}
-          >
+        <div className="novel-hero-inner flex flex-col sm:flex-row gap-5 sm:gap-8 p-5 sm:p-8">
+          <div className="novel-hero-cover">
             {cover ? (
-              <img
-                src={cover}
-                alt={`${novel.title} 표지 일러스트`}
-                className="w-full aspect-[3/4] object-cover"
-              />
+              <img src={cover} alt={`${novel.title} 표지 일러스트`} />
             ) : (
               <div
-                className="w-full aspect-[3/4] flex items-end p-3"
                 style={{ backgroundImage: `linear-gradient(150deg, ${novel.cover.from}, ${novel.cover.to})` }}
               >
-                <span className="text-[34px]">{novel.cover.glyph}</span>
+                <span>{novel.cover.glyph}</span>
               </div>
             )}
           </div>
 
-          <div className="min-w-0 flex-1 text-[#fffaf7]">
-            <div className="flex flex-wrap gap-1.5">
-              {novel.genres.map((genre) => (
-                <span key={genre} className="pill pill-ghost">
+          <div className="min-w-0 flex-1 novel-hero-body">
+            <div className="novel-hero-tags">
+              {novel.genres.slice(0, 2).map((genre) => (
+                <span key={genre} className="tag">
                   {genre}
                 </span>
               ))}
-              <span className="pill pill-ghost">{novel.status === 'ongoing' ? '연재 중' : '완결'}</span>
-              {characters.length > 0 && <span className="pill pill-ghost">등장인물 {characters.length}인</span>}
-              {sceneItems.length > 0 && <span className="pill pill-ghost">삽화 {sceneItems.length}컷</span>}
+              <span className="tag tag-ink">{novel.status === 'ongoing' ? '연재 중' : '완결'}</span>
+              {characters.length > 0 && <span className="tag">등장인물 {characters.length}인</span>}
+              {sceneItems.length > 0 && <span className="tag">삽화 {sceneItems.length}컷</span>}
             </div>
 
-            <h1 className="mt-3 text-[22px] sm:text-[34px] font-extrabold tracking-tight leading-snug">
-              {novel.title}
-            </h1>
-            <p className="mt-1.5 text-[13px]" style={{ color: 'rgba(255,250,247,0.72)' }}>
-              {novel.tagline}
-            </p>
-            <p className="mt-2 text-[12px]" style={{ color: 'rgba(255,250,247,0.56)' }}>
+            <h1 className="novel-hero-title">{novel.title}</h1>
+            <p className="novel-hero-tagline">{novel.tagline}</p>
+            <p className="novel-hero-pen">
               글 {novel.penName}
+              {published.length > 0 && (
+                <>
+                  <span aria-hidden>·</span>
+                  최근 업데이트 {formatRelative(published[published.length - 1].publishedAt)}
+                </>
+              )}
             </p>
 
-            <dl className="mt-5 flex flex-wrap gap-x-6 gap-y-3 text-[12px]">
+            <dl className="novel-hero-facts">
               <div>
-                <dt style={{ color: 'rgba(255,250,247,0.5)' }}>공개 회차</dt>
-                <dd className="mt-0.5 font-extrabold text-[15px]">
+                <dt>공개 회차</dt>
+                <dd>
                   {published.length}화{pending.length > 0 ? ` (+${pending.length})` : ''}
                 </dd>
               </div>
               <div>
-                <dt style={{ color: 'rgba(255,250,247,0.5)' }}>선택 장면</dt>
-                <dd className="mt-0.5 font-extrabold text-[15px]">
-                  {flow ? `${flow.scenes.length}번` : '-'}
-                </dd>
+                <dt>선택 장면</dt>
+                <dd>{flow ? `${flow.scenes.length}번` : '-'}</dd>
               </div>
               <div>
-                <dt style={{ color: 'rgba(255,250,247,0.5)' }}>엔딩</dt>
-                <dd className="mt-0.5 font-extrabold text-[15px]">
-                  {flow ? `${flow.endings.length}개` : '-'}
-                </dd>
-              </div>
-              <div>
-                <dt style={{ color: 'rgba(255,250,247,0.5)' }}>최근 업데이트</dt>
-                <dd className="mt-0.5 font-extrabold text-[15px]">
-                  {published.length > 0
-                    ? formatRelative(published[published.length - 1].publishedAt)
-                    : '-'}
-                </dd>
+                <dt>엔딩</dt>
+                <dd>{flow ? `${flow.endings.length}개` : '-'}</dd>
               </div>
             </dl>
 
-            <div className="mt-5 flex flex-wrap gap-2">
+            <p className="novel-hero-pricing">
+              <Icon name="lock" size={13} /> {pricingSummary(published)}
+            </p>
+
+            <div className="novel-hero-actions">
+              {first && (
+                <Link to={`/novel/${novel.id}/ep/${first.id}`} className="btn btn-primary">
+                  {FREE_EPISODE_NO}화까지 무료로 읽기
+                </Link>
+              )}
               {flow && (
-                <Link to={`/novel/${novel.id}/play`} className="btn btn-light">
+                <Link to={`/novel/${novel.id}/play`} className="btn btn-secondary">
                   {playProgress.complete
-                    ? '내가 완성한 소설 읽기 →'
+                    ? '내가 완성한 소설 읽기'
                     : playProgress.done > 0
-                      ? `이어서 쓰기 (${playProgress.done}/${playProgress.total}) →`
-                      : '이 소설 시작하기 →'}
+                      ? `이어서 쓰기 (${playProgress.done}/${playProgress.total})`
+                      : '내가 고르는 소설로 시작'}
                 </Link>
               )}
               {first && (
-                <Link to={`/novel/${novel.id}/ep/${first.id}`} className="btn btn-glass">
-                  1화부터 읽기
+                <Link to={`/novel/${novel.id}/read`} className="btn btn-ghost">
+                  <Icon name="bookOpen" size={15} /> 소설로 쭉 읽기
                 </Link>
               )}
-              {first && (
-                <Link to={`/novel/${novel.id}/read`} className="btn btn-glass">
-                  📖 소설로 쭉 읽기
-                </Link>
-              )}
-              <Link to={`/novel/${novel.id}/tree`} className="btn btn-glass">
-                분기 트리
-              </Link>
-              {characters.length > 0 && (
-                <button
-                  type="button"
-                  className="btn btn-glass"
-                  onClick={() =>
-                    document
-                      .getElementById('characters')
-                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                  }
-                >
-                  캐릭터 {characters.length}인
-                </button>
-              )}
+              <button
+                type="button"
+                className="btn btn-ghost"
+                data-on={shelfOn}
+                aria-pressed={shelfOn}
+                onClick={() => {
+                  const added = toggleShelf(novel.id)
+                  setShelfOn(added)
+                  notify(added ? '내 서재에 담았어요' : '내 서재에서 뺐어요')
+                }}
+              >
+                <Icon name={shelfOn ? 'heartFilled' : 'heart'} size={15} />
+                {shelfOn ? '서재에 담김' : '서재에 담기'}
+              </button>
             </div>
           </div>
         </div>
       </section>
+
+      {/* 이어 읽기 */}
+      {reading && (
+        <div className="resume-bar">
+          <p>
+            <Icon name="clock" size={14} />
+            <b>
+              {reading.episodeNo}화 · {reading.episodeTitle}
+            </b>
+            까지 읽었어요
+            {reading.percent > 0 && ` · ${Math.round(reading.percent * 100)}%`}
+          </p>
+          <Link to={`/novel/${novel.id}/ep/${reading.episodeId}`} className="btn btn-secondary btn-sm">
+            이어 읽기
+            <Icon name="arrowRight" size={13} />
+          </Link>
+        </div>
+      )}
 
       {/* 시놉시스 */}
       <section className="card mt-5 p-5 sm:p-6">
@@ -248,6 +256,32 @@ export function NovelPage() {
         </div>
       </section>
 
+      {/* 엔딩 도감(작품) */}
+      {flow && (
+        <section className="card mt-5 p-5 sm:p-6">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="eyebrow">Ending Collection</p>
+              <h2 className="mt-1 text-[17px] font-extrabold">이 작품의 엔딩 {flow.endings.length}개</h2>
+              <p className="mt-1 text-[12px]" style={{ color: 'var(--ink-mute)' }}>
+                마지막 장면에서 고른 갈래가 엔딩을 정합니다. 모은 엔딩 {codex.unlocked} / {codex.total}.
+              </p>
+            </div>
+            <Link to="/shelf" className="text-[11.5px] font-bold" style={{ color: 'var(--accent)' }}>
+              엔딩 도감 전체 →
+            </Link>
+          </div>
+          <div className="novel-collect mt-3">
+            {codex.items.map((slot) => (
+              <div key={slot.ending.id} className="novel-collect-item" data-unlocked={slot.unlocked}>
+                <b>{slot.unlocked ? slot.ending.name : '??? (미발견)'}</b>
+                <span>{slot.unlocked ? slot.ending.tone : slot.ending.tone} · {slot.unlocked ? '도달함' : '아직'}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* 등장인물 — 큰 포스터 카드 */}
       {characters.length > 0 && (
         <section id="characters" className="mt-8 scroll-mt-24">
@@ -276,7 +310,7 @@ export function NovelPage() {
           <div className="section-head">
             <div>
               <p className="eyebrow">Scene Gallery</p>
-              <h2 className="section-title">🎨 명장면 일러스트 갤러리</h2>
+              <h2 className="section-title">명장면 일러스트 갤러리</h2>
               <p className="mt-1.5 text-[12px]" style={{ color: 'var(--ink-mute)' }}>
                 본문에 들어간 삽화 {sceneItems.length}컷. 눌러서 크게 보고, 그 장면의 회차로 바로 갑니다.
               </p>
@@ -312,17 +346,21 @@ export function NovelPage() {
           <div>
             <p className="eyebrow">Episodes</p>
             <h2 className="section-title">회차 목록</h2>
+            <p className="section-sub">
+              {pricingSummary(published)} · {published.length + pending.length}화
+            </p>
           </div>
-          <span className="text-[11.5px]" style={{ color: 'var(--ink-mute)' }}>
-            총 {published.length + pending.length}화
-          </span>
+          <Link to="/about" className="section-more">
+            이용 안내 <Icon name="arrowRight" size={13} />
+          </Link>
         </div>
-        <ul className="grid grid-cols-1 gap-2">
+        <ul className="ep-list">
           {[...published, ...pending].map((episode) => (
             <EpisodeRow
               key={episode.id}
               novelId={novel.id}
               episode={episode}
+              access={episodeAccess(episode, wallet)}
               voted={votes.some((vote) => vote.episodeId === episode.id)}
               leading={(() => {
                 if (episode.choices.length === 0) return null
@@ -341,71 +379,64 @@ export function NovelPage() {
 function EpisodeRow({
   novelId,
   episode,
+  access,
   voted,
   leading,
 }: {
   novelId: string
   episode: Episode
+  access: ReturnType<typeof episodeAccess>
   voted: boolean
   leading: string | null
 }) {
   const pending = episode.status === 'pending'
+  const locked = access.kind === 'locked' || access.kind === 'waiting'
   const content = (
     <>
-      <span
-        className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-[11.5px] font-extrabold tabular-nums"
-        style={{
-          background: pending ? 'var(--surface-2)' : 'var(--accent-soft)',
-          color: pending ? 'var(--ink-mute)' : 'var(--accent-strong)',
-        }}
-      >
-        {episode.no}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span
-          className="block text-[13.5px] font-bold truncate"
-          style={{ color: pending ? 'var(--ink-mute)' : 'var(--ink)' }}
-        >
+      <span className="ep-no">{String(episode.no).padStart(2, '0')}</span>
+      <span className="ep-main">
+        <span className="ep-title">
           {episode.title}
+          {locked && (
+            <span className="ep-lock-icon" aria-label="잠김">
+              <Icon name={access.kind === 'waiting' ? 'clock' : 'lock'} size={12} />
+            </span>
+          )}
         </span>
-        {episode.branchLabel && (
-          <span className="block text-[11px] truncate mt-0.5" style={{ color: 'var(--ink-mute)' }}>
-            “{episode.branchLabel}” 루트
+        {episode.branchLabel && <span className="ep-sub">“{episode.branchLabel}” 루트</span>}
+      </span>
+      <span className="ep-state">
+        {pending ? (
+          <span className="tag">집필 중</span>
+        ) : (
+          <span
+            className="tag"
+            data-tone={
+              access.kind === 'locked' ? 'paid' : access.kind === 'waiting' || access.kind === 'waitfree' ? 'wait' : 'free'
+            }
+          >
+            {accessBadge(access)}
           </span>
         )}
-      </span>
-      <span className="shrink-0 text-right text-[11px]" style={{ color: 'var(--ink-mute)' }}>
-        {pending ? (
-          '집필 중'
-        ) : voted ? (
-          <span style={{ color: 'var(--accent)' }}>투표 완료</span>
-        ) : episode.voteClosesAt ? (
-          <Countdown closesAt={episode.voteClosesAt} className="text-[11px]" />
-        ) : (
-          leading ?? ''
+        {!pending && voted && <span className="ep-voted">투표함</span>}
+        {!pending && !voted && episode.voteClosesAt && (
+          <Countdown closesAt={episode.voteClosesAt} className="ep-countdown" />
+        )}
+        {!pending && !voted && !episode.voteClosesAt && leading && (
+          <span className="ep-leading">{leading}</span>
         )}
       </span>
-      {!pending && <span className="shrink-0 text-[13px]" style={{ color: 'var(--ink-mute)' }}>›</span>}
+      {!pending && <Icon name="chevronRight" size={15} className="ep-go" />}
     </>
   )
 
   if (pending) {
-    return (
-      <li
-        className="flex items-center gap-3 rounded-2xl border px-3.5 py-3"
-        style={{ borderColor: 'var(--line)', borderStyle: 'dashed', background: 'var(--surface)' }}
-      >
-        {content}
-      </li>
-    )
+    return <li className="ep-row" data-state="pending">{content}</li>
   }
 
   return (
     <li>
-      <Link
-        to={`/novel/${novelId}/ep/${episode.id}`}
-        className="card card-tap flex items-center gap-3 px-3.5 py-3"
-      >
+      <Link to={`/novel/${novelId}/ep/${episode.id}`} className="ep-row" data-state={locked ? 'locked' : 'open'}>
         {content}
       </Link>
     </li>

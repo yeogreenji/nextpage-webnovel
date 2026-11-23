@@ -229,14 +229,14 @@ export function NovelCarousel({ novels, publishedCount }: Props) {
                     <div className="carousel-actions">
                       <Link
                         to={`/novel/${novel.id}/play`}
-                        className="btn btn-light"
+                        className="btn btn-primary"
                         tabIndex={active ? 0 : -1}
                       >
-                        이 소설 시작하기 →
+                        이 소설 시작하기
                       </Link>
                       <Link
                         to={`/novel/${novel.id}`}
-                        className="btn btn-glass"
+                        className="btn btn-secondary"
                         tabIndex={active ? 0 : -1}
                       >
                         작품 정보

@@ -8,6 +8,7 @@ import { withAndParticle } from '../lib/format'
 import { ReaderToolbar } from '../components/ReaderToolbar'
 import { SceneChat } from '../components/SceneChat'
 import { interactionFor } from '../lib/interaction'
+import { endingProgress, unlockEnding } from '../lib/library'
 import type { AppliedInput } from '../lib/play'
 import type { AppliedLine, PlayChoice, PlayScene, PlaySession } from '../types'
 import {
@@ -74,6 +75,11 @@ export function PlayPage() {
     [flow, session],
   )
   const current = flow && session ? flow.scenes[done] ?? null : null
+
+  // 엔딩에 도달하면 이 기기의 엔딩 도감에 기록합니다.
+  useEffect(() => {
+    if (ending && novel) unlockEnding(novel.id, ending)
+  }, [ending, novel])
 
   const choose = useCallback(
     (scene: PlayScene, choice: PlayChoice) => {
@@ -307,7 +313,7 @@ export function PlayPage() {
                         {spoke && (
                           <div className="play-said" data-scene={scene.id}>
                             <p className="play-said-label">
-                              ✍️ {withAndParticle(speaker?.name ?? '인물')} 나눈 말 — 소설에 들어감
+                              {withAndParticle(speaker?.name ?? '인물')} 나눈 말 — 소설에 들어감
                             </p>
                             {lines.map((line) =>
                               line.kind === 'action' ? (
@@ -332,7 +338,7 @@ export function PlayPage() {
                                     }
                                     aria-label="소설에서 이 대사 빼기"
                                   >
-                                    ✕
+                                    ×
                                   </button>
                                 </div>
                               ),
@@ -343,7 +349,7 @@ export function PlayPage() {
                         {isCurrent && (
                           <div className="speak-gate" data-spoke={spoke}>
                             <p className="speak-gate-kicker">
-                              <span aria-hidden>💬</span> 지금 말 걸기 좋은 순간
+                              지금 말 걸기 좋은 순간
                             </p>
                             <p className="speak-gate-cue">{interaction.cue}</p>
                             <button
@@ -390,7 +396,7 @@ export function PlayPage() {
               {isCurrent && (
                 <div className="choice-panel">
                   <p className="choice-prompt">
-                    <span aria-hidden>❖</span> 이 장면에서, 나는 —
+                    이 장면에서, 나는 —
                   </p>
                   <div className="choice-grid">
                     {scene.choices.map((item, choiceIndex) => (
@@ -419,7 +425,7 @@ export function PlayPage() {
                       className="play-chat-inline"
                       onClick={() => openChat()}
                     >
-                      💬 {withAndParticle(speaker?.name ?? '등장인물')} 대화 — 소설에 반영
+                      {withAndParticle(speaker?.name ?? '등장인물')} 대화 — 소설에 반영
                     </button>
                   </div>
                 </div>
@@ -431,7 +437,7 @@ export function PlayPage() {
                   className="play-scene-chat"
                   onClick={() => openChat()}
                 >
-                  💬 {scene.no}장에서 {withAndParticle(speaker.name)} 나눈 대화 · 대사 가져오기
+                  {scene.no}장에서 {withAndParticle(speaker.name)} 나눈 대화 · 대사 가져오기
                 </button>
               )}
             </article>
@@ -479,10 +485,22 @@ export function PlayPage() {
             >
               마지막 선택 다시 하기
             </button>
+            <Link to="/shelf" className="btn btn-ghost">
+              엔딩 도감 보기
+            </Link>
             <button type="button" className="btn btn-ghost" onClick={restart}>
               처음부터 새로 쓰기
             </button>
           </div>
+          {flow && (
+            <p className="play-finish-note">
+              이 작품에서 모은 엔딩 {endingProgress(novel.id, flow).unlocked} / {flow.endings.length} —{' '}
+              <Link to="/shelf" className="underline decoration-dotted underline-offset-4">
+                내 서재의 엔딩 도감
+              </Link>
+              에서 확인할 수 있어요.
+            </p>
+          )}
           <p className="play-finish-note">
             엔딩은 마지막 장면에서 고른 선택이 정합니다. 마지막 선택 하나를 바꾸면 다른 엔딩이 열리고,
             이 작품에는 엔딩이 {flow.endings.length}개 있습니다.
@@ -501,7 +519,7 @@ export function PlayPage() {
                 <h2>내 선택 기록</h2>
               </div>
               <button type="button" onClick={() => setRecordOpen(false)} aria-label="닫기">
-                ✕
+                ×
               </button>
             </header>
             <ol className="play-record-list">

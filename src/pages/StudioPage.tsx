@@ -176,8 +176,8 @@ export function StudioPage() {
                   onClick={() => setMode(item.value)}
                   className="text-left rounded-xl border px-3.5 py-2.5 transition-colors"
                   style={{
-                    borderColor: mode === item.value ? 'var(--accent)' : 'var(--line)',
-                    background: mode === item.value ? 'var(--accent-soft)' : 'var(--surface)',
+                    borderColor: mode === item.value ? 'var(--ink)' : 'var(--line)',
+                    background: mode === item.value ? 'var(--surface-2)' : 'var(--surface)',
                   }}
                 >
                   <span className="block text-[13px] font-bold">{item.label}</span>
