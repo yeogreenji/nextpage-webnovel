@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
 import { ReaderToolbar } from '../components/ReaderToolbar'
+import { ReaderDock } from '../components/ReaderDock'
 import { VotePanel } from '../components/VotePanel'
 import { CommentSection } from '../components/CommentSection'
 import { CharacterStrip } from '../components/CharacterStrip'
@@ -13,6 +14,7 @@ import { formatDateTime, readingMinutes } from '../lib/format'
 import { copyText } from '../lib/share-card'
 import { EPISODE_SCENES, imageUrl, placeScenes } from '../data/art'
 import { recordReading } from '../lib/library'
+import { FREE_EPISODE_NO } from '../lib/commerce'
 
 export function EpisodePage() {
   const { novelId = '', episodeId = '' } = useParams()
@@ -37,6 +39,21 @@ export function EpisodePage() {
     [episodesOfNovel, episodeId],
   )
   const articleRef = useRef<HTMLElement>(null)
+  const publishedOfNovel = useMemo(
+    () =>
+      episodes
+        .filter((item) => item.novelId === novelId && item.status === 'published')
+        .sort((a, b) => a.no - b.no),
+    [episodes, novelId],
+  )
+  const chosenNext = useMemo(() => {
+    const mine = votes.find((vote) => vote.episodeId === episodeId)
+    if (!mine) return null
+    const choice = episode?.choices.find((item) => item.id === mine.choiceId)
+    if (!choice?.targetEpisodeId) return null
+    const target = episodes.find((item) => item.id === choice.targetEpisodeId)
+    return target && target.status === 'published' ? target : null
+  }, [votes, episodes, episode, episodeId])
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' })
@@ -143,7 +160,7 @@ export function EpisodePage() {
   /* ── 잠긴 회차: 앞부분만 미리 보여 주고 대여권·코인·패스 안내로 잠급니다 ── */
   if (access && !access.readable) {
     return (
-      <div className="page-shell pt-5 pb-10">
+      <div className="page-shell pt-5 pb-10 ep-page">
         <div className="reader-shell">
           <nav className="crumbs" aria-label="위치">
             <Link to="/library">작품</Link>
@@ -177,7 +194,12 @@ export function EpisodePage() {
             ))}
           </div>
 
-          <EpisodeLock episode={episode} access={access} />
+          <EpisodeLock
+            episode={episode}
+            access={access}
+            novelId={novel.id}
+            freeEpisodeId={publishedOfNovel.find((item) => item.no <= FREE_EPISODE_NO)?.id}
+          />
 
           {novel.characters && novel.characters.length > 0 && (
             <section className="mt-8">
@@ -194,6 +216,16 @@ export function EpisodePage() {
             </section>
           )}
         </div>
+
+        <ReaderDock
+          novel={novel}
+          episode={episode}
+          published={publishedOfNovel}
+          prev={parent ?? null}
+          next={null}
+          canChoose={false}
+          locked
+        />
       </div>
     )
   }
@@ -203,7 +235,7 @@ export function EpisodePage() {
   const minutes = readingMinutes(episode.body)
 
   return (
-    <div className="page-shell pt-5 pb-6">
+    <div className="page-shell pt-5 pb-6 ep-page">
       <ReadingProgress />
 
       <div className="reader-shell">
@@ -318,39 +350,51 @@ export function EpisodePage() {
       </article>
       </div>
 
+      <VotePanel novel={novel} episode={episode} />
+
       {children.length > 0 && (
         <section className="reader-shell mt-4">
-          <div className="card p-4">
-            <p className="eyebrow">Next</p>
-            <h2 className="mt-1 text-[15px] font-extrabold">이 선택으로 이어진 다음 화</h2>
-            <ul className="mt-2.5 grid gap-2">
-              {children.map((child) => (
-                <li key={child.id}>
-                  <Link
-                    to={`/novel/${novel.id}/ep/${child.id}`}
-                    className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
-                    style={{ background: 'var(--surface-2)' }}
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-[12.5px] font-bold truncate">{child.no}화 · {child.title}</span>
-                      {child.branchLabel && (
-                        <span className="mt-0.5 block text-[10.5px] truncate" style={{ color: 'var(--ink-mute)' }}>
-                          “{child.branchLabel}” 루트
+          <details className="next-routes" open={!myVote}>
+            <summary>
+              <span className="next-routes-title">분기별 다음 화 전체 보기</span>
+              <span className="next-routes-count">{children.length}개 루트</span>
+            </summary>
+            <ul className="next-routes-list">
+              {children.map((child) => {
+                const isMine = chosenNext?.id === child.id
+                return (
+                  <li key={child.id}>
+                    <Link
+                      to={`/novel/${novel.id}/ep/${child.id}`}
+                      className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
+                      style={{
+                        background: isMine ? 'var(--accent-soft)' : 'var(--surface-2)',
+                        border: `1px solid ${isMine ? 'var(--accent)' : 'transparent'}`,
+                      }}
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-[12.5px] font-bold truncate">
+                          {isMine && '👑 '}
+                          {child.no}화 · {child.title}
                         </span>
-                      )}
-                    </span>
-                    <span className="shrink-0 text-[12px] font-extrabold" style={{ color: 'var(--accent)' }}>
-                      읽기 →
-                    </span>
-                  </Link>
-                </li>
-              ))}
+                        {child.branchLabel && (
+                          <span className="mt-0.5 block text-[10.5px] truncate" style={{ color: 'var(--ink-mute)' }}>
+                            “{child.branchLabel}” 루트
+                          </span>
+                        )}
+                      </span>
+                      <span className="shrink-0 text-[12px] font-extrabold" style={{ color: 'var(--accent)' }}>
+                        읽기 →
+                      </span>
+                    </Link>
+                  </li>
+                )
+              })}
             </ul>
-          </div>
+          </details>
         </section>
       )}
 
-      <VotePanel novel={novel} episode={episode} />
       {episode.choices.length === 0 && (
         <section className="card mt-9 p-6 text-center">
           <p className="eyebrow">End of route</p>
@@ -369,7 +413,7 @@ export function EpisodePage() {
         </section>
       )}
 
-      {/* 하단 토글 — 투표 후에도 바로 정주행 모드로 */}
+      {/* 하단 — 정주행·분기 지도. 회차 이동은 화면 아래 고정 바가 맡습니다. */}
       <div className="story-entry-bar mt-5">
         <span className="story-entry-label">선택한 분기를 한 편의 소설로 이어 읽기</span>
         <button
@@ -385,11 +429,9 @@ export function EpisodePage() {
         <Link to={`/novel/${novel.id}/tree`} className="btn btn-secondary btn-sm">
           분기 트리 보기
         </Link>
-        {parent && (
-          <Link to={`/novel/${novel.id}/ep/${parent.id}`} className="btn btn-secondary btn-sm">
-            ← {parent.no}화 · {parent.title}
-          </Link>
-        )}
+        <Link to={`/novel/${novel.id}/play`} className="btn btn-ghost btn-sm">
+          내가 고르는 소설
+        </Link>
         <Link to={`/novel/${novel.id}`} className="btn btn-ghost btn-sm">
           작품 페이지
         </Link>
@@ -421,6 +463,15 @@ export function EpisodePage() {
           이 작품의 다른 회차는 작품 페이지에서 이어 읽을 수 있습니다. 투표는 회차마다 한 번씩 참여됩니다.
         </p>
       )}
+
+      <ReaderDock
+        novel={novel}
+        episode={episode}
+        published={publishedOfNovel}
+        prev={parent ?? null}
+        next={chosenNext}
+        canChoose={episode.choices.length > 0}
+      />
     </div>
   )
 }

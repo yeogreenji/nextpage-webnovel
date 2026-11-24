@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
 import { NovelCard } from '../components/NovelCard'
@@ -23,6 +23,7 @@ import {
 
 export function HomePage() {
   const { ready, novels, episodes, votes, openPricing, hasPass, passDays } = useStore()
+  const [feedLimit, setFeedLimit] = useState(8)
   const sessions = useMemo(() => allSessions(), [])
   const recent = useMemo(() => recentReading(6), [])
   const curationCounts = useMemo(
@@ -400,7 +401,7 @@ export function HomePage() {
         </div>
 
         <div className="book-grid">
-          {feed.map((novel) => (
+          {feed.slice(0, feedLimit).map((novel) => (
             <NovelCard
               key={novel.id}
               novel={novel}
@@ -408,6 +409,22 @@ export function HomePage() {
             />
           ))}
         </div>
+
+        {feed.length > feedLimit && (
+          <div className="feed-more">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setFeedLimit((limit) => Math.min(feed.length, limit + 8))}
+            >
+              작품 더 보기
+              <span className="feed-more-count">
+                {Math.min(feedLimit, feed.length)}/{feed.length}
+              </span>
+            </button>
+            <p>한 번에 8편씩 펼칩니다. 장르로 좁히려면 위 탭이나 작품 목록을 쓰세요.</p>
+          </div>
+        )}
       </section>
 
       {/* ── 요금 안내 ─────────────────────────────── */}

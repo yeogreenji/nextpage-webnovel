@@ -9,3 +9,5 @@ dist-ssr
 tests/.build
 test-results
 playwright-report
+
+.audit

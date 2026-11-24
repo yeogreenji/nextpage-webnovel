@@ -13,7 +13,7 @@ export const villainessDeepEpisodes: Episode[] = [
     id: 'ep-villainess-1',
     novelId: 'nv-villainess',
     no: 1,
-    title: '두 번째 첫 출근',
+    title: '3년 전의 임명장',
     parentEpisodeId: null,
     branchLabel: null,
     status: 'published',

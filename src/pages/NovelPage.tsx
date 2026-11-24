@@ -37,11 +37,13 @@ export function NovelPage() {
     }
   }, [novel])
 
-  // 캐릭터 스포트라이트에서 넘어온 경우 등장인물 섹션으로
+  // 캐릭터 스포트라이트·회차 목록에서 넘어온 해시를 해당 섹션으로
   useEffect(() => {
-    if (!ready || location.hash !== '#characters') return undefined
+    if (!ready || !location.hash) return undefined
+    const anchor = location.hash === '#characters' ? 'characters' : location.hash === '#episodes' ? 'episodes' : null
+    if (!anchor) return undefined
     const timer = window.setTimeout(() => {
-      document.getElementById('characters')?.scrollIntoView({ behavior: 'auto', block: 'start' })
+      document.getElementById(anchor)?.scrollIntoView({ behavior: 'auto', block: 'start' })
     }, 160)
     return () => window.clearTimeout(timer)
   }, [ready, location.hash, novelId])
@@ -183,6 +185,13 @@ export function NovelPage() {
                   <Icon name="bookOpen" size={15} /> 소설로 쭉 읽기
                 </Link>
               )}
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => document.getElementById('episodes')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              >
+                <Icon name="book" size={15} /> 회차 목록
+              </button>
               <button
                 type="button"
                 className="btn btn-ghost"
@@ -341,7 +350,7 @@ export function NovelPage() {
         </p>
       </section>
 
-      <section className="mt-8">
+      <section className="mt-8 scroll-mt-24" id="episodes">
         <div className="section-head">
           <div>
             <p className="eyebrow">Episodes</p>

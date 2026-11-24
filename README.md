@@ -4,7 +4,7 @@
 > 장면마다 3~4개의 문장 중 하나를 고르고, 말을 걸기 좋은 자리에서 인물과 대화하고,
 > 마지막에는 내가 고른 갈래만으로 이뤄진 **한 편의 소설**을 읽는 인터랙티브 웹소설 플랫폼입니다.
 
-![홈 화면](docs/screenshots/v8/01-home.jpg)
+![홈 화면](docs/screenshots/v9/01-home.jpg)
 
 웹소설을 읽는 일은 원래 일방향입니다. 작가가 쓰고, 독자는 따라갑니다.
 넥스트페이지는 그 방향을 뒤집습니다. 작품마다 **여섯 장면, 장면마다 3~4개의 갈래**가 있고, 고른 즉시
@@ -54,17 +54,17 @@
 
 | 홈 | 작품 | 유료 회차 |
 | --- | --- | --- |
-| ![home](docs/screenshots/v8/01-home.jpg) | ![novel](docs/screenshots/v8/03-novel.jpg) | ![locked](docs/screenshots/v8/14-episode-locked.png) |
+| ![home](docs/screenshots/v9/01-home.jpg) | ![novel](docs/screenshots/v9/03-novel.jpg) | ![locked](docs/screenshots/v9/14-episode-locked.png) |
 
 | 충전소 | 넥스트패스 | 모바일 홈 |
 | --- | --- | --- |
-| ![store](docs/screenshots/v8/10-store.png) | ![pass](docs/screenshots/v8/11-store-pass.png) | ![mobile](docs/screenshots/v8/12-mobile-home.jpg) |
+| ![store](docs/screenshots/v9/10-store.png) | ![pass](docs/screenshots/v9/11-store-pass.png) | ![mobile](docs/screenshots/v9/12-mobile-home.jpg) |
 
 ### 검증
 - `npm run typecheck` · `npm run build` 통과
 - `npm test` — **86개** (기존 69 + 유료 모델 로직 13 + 잠금/충전 화면 4)
 - `npm run test:e2e` — **55개** (기존 52 + `e2e/pricing.spec.ts` 3)
-- 화면 캡처: `node scripts/shots.mjs` — 개발 서버가 없으면 직접 띄워 `docs/screenshots/v8/`에 저장
+- 화면 캡처: `node scripts/shots.mjs` — 개발 서버가 없으면 직접 띄워 `docs/screenshots/v9/`에 저장
 
 ---
 
@@ -468,12 +468,16 @@ e2e/                Playwright E2E (25작품 엔딩 · 말 걸기 · 조사 · �
                     읽기 설정 저장 · 최근 본/이어 읽기 · 엔딩 도감 · 찜 · 유료 회차/충전/패스)
 scripts/
 ├─ test-unit.mjs    단위·화면 검사 실행기
-└─ shots.mjs        화면 캡처 (docs/screenshots/v8)
+├─ story-audit.ts   스토리라인 전수 감사 (분기 목표·도달성·순환·연속성)
+├─ ux-audit.mjs     독자 여정 캡처·계측 (데스크톱 1440 / 모바일 390)
+├─ ux-flow.mjs      투표→다음 화·잠금·더 보기 상호작용 점검
+└─ shots.mjs        화면 캡처 (docs/screenshots/v9)
 docs/
 ├─ BACKEND.md      Supabase 스키마 · 저장소 매핑
 ├─ screenshots/    README 이미지 (1차)
 ├─ screenshots-v2/ 다장르·정주행·캐릭터 톡 화면 이미지
-└─ screenshots/v8/ v8 편집 디자인 · 유료 회차 · 충전소 화면
+├─ screenshots/v8/ v8 편집 디자인 · 유료 회차 · 충전소 화면
+└─ screenshots/v9/ v9 리더 하단 바 · 홈 더 보기 · 잠금 탈출 동선
 ```
 
 ---

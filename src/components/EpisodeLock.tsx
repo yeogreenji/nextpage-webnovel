@@ -17,7 +17,7 @@ import type { Episode } from '../types'
  * 잠긴 회차 안내 — 대여권·코인·넥스트패스, 그리고 기다무.
  * 유료 회차(4화부터)는 대여권 1장 또는 2코인, 3화는 기다무(신청 후 24시간).
  */
-export function EpisodeLock({ episode, access }: { episode: Episode; access: EpisodeAccess }) {
+export function EpisodeLock({ episode, access, novelId, freeEpisodeId }: { episode: Episode; access: EpisodeAccess; novelId?: string; freeEpisodeId?: string }) {
   const { wallet, unlockEpisode, requestWaitFree, collectWaitFree, openPricing, hasPass } = useStore()
   const [, tick] = useState(0)
 
@@ -156,6 +156,19 @@ export function EpisodeLock({ episode, access }: { episode: Episode; access: Epi
           </>
         )}
       </div>
+
+      {novelId && (
+        <div className="ep-lock-escape">
+          {freeEpisodeId && (
+            <Link to={`/novel/${novelId}/ep/${freeEpisodeId}`}>
+              무료 회차부터 읽기 <Icon name="arrowRight" size={12} />
+            </Link>
+          )}
+          <Link to={`/novel/${novelId}#episodes`}>
+            회차 목록 보기 <Icon name="arrowRight" size={12} />
+          </Link>
+        </div>
+      )}
     </section>
   )
 }

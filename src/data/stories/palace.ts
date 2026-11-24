@@ -35,7 +35,7 @@ export function buildPalace(nowMs: number): {
       id: 'ep-palace-1',
       novelId,
       no: 1,
-      title: '두 번째 첫 출근',
+      title: '다시, 서고의 아침',
       parentEpisodeId: null,
       branchLabel: null,
       status: 'published',
@@ -237,7 +237,7 @@ export function buildPalace(nowMs: number): {
       publishedAt: iso(-8 * HOUR),
       voteClosesAt: iso(60 * HOUR),
       body: [
-        '3층 봉인서가는 문이 하나였다. 열쇠 구멍이 없고, 손잡이 옆에 작은 홈이 있었다. 솔드는 그 홈에 손가락을 넣었다. 문이 열렸다. 그녀의 손가락을 기억하는 문이었다.',
+        '3층 봉인서고는 문이 하나였다. 열쇠 구멍이 없고, 손잡이 옆에 작은 홈이 있었다. 솔드는 그 홈에 손가락을 넣었다. 문이 열렸다. 그녀의 손가락을 기억하는 문이었다.',
         '육백 권은 서로 다른 책이 아니었다. 같은 책이 육백 권이었다. 표지도, 제목도, 두께도 같았다. 제목은 이랬다.',
         '"아르넨 제국 연대기, 제1권."',
         '솔드는 첫 권을 폈다. 1년의 기록이 있었다. 두 번째 권은 2년. 세 번째 권은 3년. 412년은 어디에도 없었다. 육백 권이 모두 과거였고, 마지막 권은 411년에서 끝났다.',

@@ -367,8 +367,8 @@ export const EPISODE_SCENES: Record<string, InlineScene[]> = {
     {
       image: 'images/scenes/story-office-2a.jpg',
       caption: '회의 시작 2분 전, 숫자를 먼저 말하기로 했다.',
-      anchor: '그래서 B안으로 바꿔 왔습니다',
-      fallbackAfter: 12,
+      anchor: 'B안으로 바꿔 왔습니다',
+      fallbackAfter: 7,
     },
   ],
   'ep-office-2b': [

@@ -3960,3 +3960,289 @@ a.ep-row:hover {
 .store-recent {
   font-variant-numeric: tabular-nums;
 }
+
+/* ─────────────────── 📖 읽기 하단 고정 바 (회차 이동) ─────────────────── */
+
+.ep-page {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+.reader-dock {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 45;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(16px);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.reader-dock-gauge {
+  height: 2px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.reader-dock-gauge span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.12s linear;
+}
+
+.reader-dock-inner {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  max-width: 780px;
+  margin-inline: auto;
+  padding: 6px 8px;
+}
+
+.dock-side {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 58px;
+  min-height: 46px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dock-side:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.dock-side[data-off] {
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.dock-aa {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dock-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+  min-height: 46px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.dock-center:hover {
+  background: var(--surface-2);
+}
+
+.dock-center b {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.dock-center span {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.dock-next {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 96px;
+  min-height: 46px;
+  padding: 4px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dock-next:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+/* 넓은 화면에서는 본문 폭에 맞춘 떠 있는 바 */
+@media (min-width: 768px) {
+  .ep-page {
+    padding-bottom: 118px;
+  }
+
+  .reader-dock {
+    bottom: 18px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(680px, calc(100vw - 48px));
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 18px 40px -24px rgba(23, 18, 29, 0.45);
+    overflow: hidden;
+  }
+}
+
+/* 읽는 동안에는 전역 하단 내비게이션을 감춥니다 */
+.mobile-nav[data-hidden='true'] {
+  display: none;
+}
+
+/* 잠긴 회차에서도 막다른 길이 되지 않도록 — 무료 회차·회차 목록으로 나가는 길 */
+.ep-lock-escape {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+  margin-top: 12px;
+  padding: 12px 20px;
+  border-top: 1px dashed var(--line);
+}
+
+.ep-lock-escape a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+.ep-lock-escape a:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+/* 홈 작품 피드 — 한 번에 다 펼치지 않고 8편씩 */
+.feed-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.feed-more .btn {
+  min-width: 200px;
+}
+
+.feed-more-count {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.feed-more p {
+  font-size: 11px;
+  color: var(--ink-mute);
+}
+
+/* 모바일 읽기 화면 — 본문이 첫 화면에서 바로 시작하도록 군더더기를 줄입니다 */
+@media (max-width: 640px) {
+  .reader-settings-copy {
+    display: none;
+  }
+
+  .reader-settings-open {
+    padding: 5px;
+  }
+
+  .story-entry-bar {
+    padding: 8px;
+  }
+
+  .story-entry-bar .story-entry-label {
+    display: none;
+  }
+
+  .story-entry-bar .story-entry-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* 분기별 다음 화 — 투표 뒤에는 접어 두고, 필요할 때 펼칩니다 */
+.next-routes {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 4px 14px 6px;
+}
+
+.next-routes > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  list-style: none;
+}
+
+.next-routes > summary::-webkit-details-marker {
+  display: none;
+}
+
+.next-routes > summary::after {
+  content: '⌄';
+  font-size: 14px;
+  color: var(--ink-mute);
+}
+
+.next-routes[open] > summary::after {
+  content: '⌃';
+}
+
+.next-routes-count {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.next-routes-list {
+  display: grid;
+  gap: 8px;
+  padding: 4px 0 8px;
+}
+
+/* 읽기 바가 떠 있을 때는 푸터 마지막 줄이 가려지지 않게 */
+main:has(.reader-dock) + .site-footer .footer-legal {
+  padding-bottom: 92px;
+}

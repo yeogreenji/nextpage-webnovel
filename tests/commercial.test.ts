@@ -294,4 +294,36 @@ describe('기존 독자 저장분 — 연재본 교체', () => {
     assert.ok(snapshot.comments.some((comment) => comment.id === 'cm-mine'), '내 댓글 유지')
     window.localStorage.clear()
   })
+
+  it('v10 문장·제목 교정이 저장분에도 적용되고, 내가 덧붙인 문장은 남는다', async () => {
+    const { LocalRepository } = await import('../src/lib/repository')
+    window.localStorage.clear()
+    const seed = buildSeed()
+    const office = seed.episodes.find((episode) => episode.id === 'ep-office-1')!
+    const palace = seed.episodes.find((episode) => episode.id === 'ep-palace-1')!
+
+    const storedOffice: Episode = {
+      ...office,
+      body: office.body.replace(
+        '강남대로는 이미 만원이었고, 그 위를 걷는 사람들의 아침도 그랬다.',
+        '강남대로는 이미 만원이었고, 내 인생도 그랬다.',
+      ) + '\n\n내가 덧붙인 문장.',
+    }
+    const storedPalace: Episode = { ...palace, title: '두 번째 첫 출근' }
+
+    window.localStorage.setItem('np.novels.v1', JSON.stringify(seed.novels))
+    window.localStorage.setItem('np.episodes.v1', JSON.stringify([storedOffice, storedPalace]))
+    window.localStorage.setItem('np.seed.version.v1', '9')
+
+    const snapshot = await new LocalRepository().load()
+    const fixedOffice = snapshot.episodes.find((episode) => episode.id === 'ep-office-1')!
+    assert.ok(
+      fixedOffice.body.includes('그 위를 걷는 사람들의 아침도 그랬다.'),
+      '1인칭으로 남아 있던 문장이 3인칭으로 교정됨',
+    )
+    assert.ok(fixedOffice.body.includes('내가 덧붙인 문장.'), '독자가 덧붙인 문장은 유지')
+    const fixedPalace = snapshot.episodes.find((episode) => episode.id === 'ep-palace-1')!
+    assert.equal(fixedPalace.title, '다시, 서고의 아침')
+    window.localStorage.clear()
+  })
 })

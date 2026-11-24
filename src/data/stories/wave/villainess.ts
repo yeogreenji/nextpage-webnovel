@@ -60,7 +60,7 @@ export const villainessEpisode: Episode = {
   id: 'ep-villainess-1',
   novelId: 'nv-villainess',
   no: 1,
-  title: '두 번째 첫 출근',
+  title: '3년 전의 임명장',
   parentEpisodeId: null,
   branchLabel: null,
   status: 'published',
@@ -94,7 +94,7 @@ const scenes: SceneSeed[] = [
   {
     id: 'wf-villainess-1',
     no: 1,
-    title: '두 번째 첫 출근',
+    title: '3년 전의 임명장',
     place: '아르덴력 3년 전 · 황궁 서기실',
     speakerId: 'ch-vl-kaien',
     body: [

@@ -29,7 +29,60 @@ export const DEFAULT_SETTINGS: ReaderSettings = {
 }
 
 /** 시드 콘텐츠 버전 — 새 작품·회차를 기존 저장분 위에 얹을 때 씁니다. */
-const SEED_VERSION = 9
+const SEED_VERSION = 10
+
+/**
+ * v10 문장 교정 — 이미 이 기기에 저장된 회차에도 반영되도록,
+ * 정확히 일치하는 문장만 바꿔 끼웁니다. (독자가 스튜디오에서 고친 나머지 글은 그대로)
+ */
+const TEXT_FIXES: { id: string; from: string; to: string }[] = [
+  {
+    id: 'ep-office-1',
+    from: '강남대로는 이미 만원이었고, 내 인생도 그랬다.',
+    to: '강남대로는 이미 만원이었고, 그 위를 걷는 사람들의 아침도 그랬다.',
+  },
+  {
+    id: 'ep-office-1',
+    from: '8시 59분에 도착하는 성실함은 내가 만든 것이었다.',
+    to: '8시 59분에 도착하는 성실함은 하윤이 만든 것이었다.',
+  },
+  { id: 'ep-parcel-1', from: '내 이름이었다. 주소는 이 집이고, 받는 사람도 나였다.', to: '자기 이름이었다. 주소는 이 집이고, 받는 사람은 윤재였다.' },
+  {
+    id: 'ep-parcel-1',
+    from: '사흘 뒤의 내가 뭘 하든, 지금의 내가 할 수 있는 일은',
+    to: '사흘 뒤의 자신이 뭘 하든, 지금의 자신이 할 수 있는 일은',
+  },
+  { id: 'ep-marry-3b', from: '왜 내가 서명한 날 아침에', to: '왜 지안이 서명한 날 아침에' },
+  { id: 'ep-palace-3a', from: '3층 봉인서가는', to: '3층 봉인서고는' },
+  { id: 'ep-palace-3b', from: '사서는 봉인서가에 들어가지 않는다', to: '사서는 봉인서고에 들어가지 않는다' },
+  {
+    id: 'ep-secretary-1',
+    from: '대표님은 8시 55분 도착이래. 5분 있으면 오셔.',
+    to: '대표님은 8시 55분 도착이래. 1분 있으면 오셔.',
+  },
+  { id: 'ep-secretary-1', from: '8시 54분, 엘리베이터가 열리고', to: '8시 55분, 엘리베이터가 열리고' },
+]
+
+/** 제목만 바뀐 회차 — 본문이 그대로면 제목을 새 시드로 맞춥니다. */
+const TITLE_FIXES: { id: string; from: string; to: string }[] = [
+  { id: 'ep-palace-1', from: '두 번째 첫 출근', to: '다시, 서고의 아침' },
+  { id: 'ep-villainess-1', from: '두 번째 첫 출근', to: '3년 전의 임명장' },
+]
+
+/** 저장된 회차에 문장·제목 교정을 적용합니다. */
+function applyEpisodeFixes(episodes: Episode[]): Episode[] {
+  return episodes.map((episode) => {
+    let next = episode
+    for (const fix of TEXT_FIXES) {
+      if (fix.id !== episode.id || !next.body.includes(fix.from)) continue
+      next = { ...next, body: next.body.split(fix.from).join(fix.to) }
+    }
+    for (const fix of TITLE_FIXES) {
+      if (fix.id === episode.id && next.title === fix.from) next = { ...next, title: fix.to }
+    }
+    return next
+  })
+}
 
 const KEYS = {
   novels: 'np.novels.v1',
@@ -124,7 +177,7 @@ function mergeSeedContent(): void {
   ]
 
   write(KEYS.novels, nextNovels)
-  write(KEYS.episodes, nextEpisodes)
+  write(KEYS.episodes, applyEpisodeFixes(nextEpisodes))
   write(KEYS.comments, nextComments)
   write(KEYS.version, SEED_VERSION)
 }

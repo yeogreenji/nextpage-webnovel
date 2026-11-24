@@ -425,6 +425,9 @@ EXPANSION_KEYS.forEach((key) => {
   EXPANSION_CHOICE_ART[`${n}-3a-b`] = hero
 })
 
+/** 파일이 없는 자리는 있는 컷으로 대신합니다(선택지 카드 깨진 이미지 방지). */
+EXPANSION_CHOICE_ART['ep-idol-2a-a'] = 'images/scenes/pf-idol-4.jpg'
+
 /** 신작 회차 id → 본문 삽화 */
 export const EXPANSION_SCENES: Record<string, InlineScene[]> = {
   'ep-marry-1': [
@@ -448,7 +451,7 @@ export const EXPANSION_SCENES: Record<string, InlineScene[]> = {
       image: 'images/scenes/ep-marry-3a-a.jpg',
       caption: '“감정이 발생했습니다. 그래서 재협상해야 합니다.”',
       anchor: '감정이 발생했습니다',
-      fallbackAfter: 20,
+      fallbackAfter: 29,
     },
   ],
   'ep-campus-1': [
@@ -463,8 +466,8 @@ export const EXPANSION_SCENES: Record<string, InlineScene[]> = {
     {
       image: 'images/scenes/ep-campus-2a-a.jpg',
       caption: '봄비 내리는 도서관 복도, 원고를 사이에 두고 마주 선 두 사람.',
-      anchor: '청록',
-      fallbackAfter: 12,
+      anchor: '창밖에서 봄비가 내리기 시작했다',
+      fallbackAfter: 14,
     },
   ],
   'ep-campus-3a': [
@@ -487,8 +490,8 @@ export const EXPANSION_SCENES: Record<string, InlineScene[]> = {
     {
       image: 'images/scenes/ep-idol-2b-a.jpg',
       caption: '리어카 옆, 삼 년 만에 꺼낸 문장.',
-      anchor: '내가 낼 수 있었으니까요',
-      fallbackAfter: 14,
+      anchor: '낼 수 있었으니까요',
+      fallbackAfter: 17,
     },
   ],
   'ep-idol-3a': [
@@ -512,7 +515,7 @@ export const EXPANSION_SCENES: Record<string, InlineScene[]> = {
       image: 'images/scenes/ep-palace-2a-a.jpg',
       caption: '금고 앞 탁자, 서명 대신 내민 봉인 해제 명령서.',
       anchor: '봉인 해제 명령서',
-      fallbackAfter: 22,
+      fallbackAfter: 38,
     },
   ],
   'ep-palace-3a': [
@@ -560,7 +563,7 @@ export const EXPANSION_SCENES: Record<string, InlineScene[]> = {
       image: 'images/scenes/ep-murim-2a-a.jpg',
       caption: '빌린 검을 쥔 무진. 잃은 건 자기 검이었다.',
       anchor: '빌린 검은 쓸 수 있다',
-      fallbackAfter: 22,
+      fallbackAfter: 31,
     },
   ],
   'ep-murim-3a': [

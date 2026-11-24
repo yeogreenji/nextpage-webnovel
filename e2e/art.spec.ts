@@ -71,7 +71,13 @@ test('홈 — 최상단 슬라이드·작품 피드의 모든 이미지가 로�
   await page.goto('/#/', { waitUntil: 'networkidle' })
   await expect(page.locator('.book-card').first()).toBeVisible()
 
-  // 카드 수 = 25
+  // 처음에는 8편만, '더 보기'로 8편씩 펼쳐 전체 25편까지 (모바일 스크롤 길이 절약)
+  await expect(page.locator('.book-card')).toHaveCount(8)
+  const more = page.getByRole('button', { name: /작품 더 보기/ })
+  for (let i = 0; i < 3; i += 1) {
+    if (!(await more.count())) break
+    await more.click()
+  }
   await expect(page.locator('.book-card')).toHaveCount(25)
 
   const images = await imageHealth(page)

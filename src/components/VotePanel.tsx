@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Episode, Novel } from '../types'
 import { useStore } from '../store/StoreProvider'
@@ -18,6 +18,17 @@ interface Props {
 export function VotePanel({ novel, episode }: Props) {
   const { votes, episodes, castVote, notify } = useStore()
   const [shareOpen, setShareOpen] = useState(false)
+  const [justVoted, setJustVoted] = useState(false)
+  const routesRef = useRef<HTMLDivElement>(null)
+
+  // 선택을 남기면 바로 아래에 열리는 '다음 화'로 시선을 옮겨 줍니다.
+  useEffect(() => {
+    if (!justVoted) return
+    const timer = window.setTimeout(() => {
+      routesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 260)
+    return () => window.clearTimeout(timer)
+  }, [justVoted])
 
   const tally = useMemo(() => tallyVotes(episode, votes), [episode, votes])
   const mine = myChoiceId(episode.id, votes)
@@ -91,6 +102,7 @@ export function VotePanel({ novel, episode }: Props) {
               canVote
                 ? async () => {
                     await castVote(episode.id, choice.id)
+                    setJustVoted(true)
                     notify('선택을 남겼어요. 결과를 확인해 보세요')
                   }
                 : undefined
@@ -103,20 +115,7 @@ export function VotePanel({ novel, episode }: Props) {
       </div>
 
       {!canVote && (
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <button type="button" className="btn btn-primary btn-sm" onClick={() => setShareOpen(true)}>
-            결과 카드 공유
-          </button>
-          {!mine && closed && (
-            <span className="text-[11.5px]" style={{ color: 'var(--ink-mute)' }}>
-              투표가 마감되어 결과만 볼 수 있습니다.
-            </span>
-          )}
-        </div>
-      )}
-
-      {!canVote && (
-        <div className="mt-5 grid gap-2">
+        <div className="mt-5 grid gap-2" ref={routesRef}>
           {episode.choices.map((choice) => {
             const target = choice.targetEpisodeId
               ? episodes.find((item) => item.id === choice.targetEpisodeId)
@@ -142,13 +141,32 @@ export function VotePanel({ novel, episode }: Props) {
                   background: isAdopted ? 'var(--accent-soft)' : 'var(--surface)',
                 }}
               >
-                <span className="min-w-0 flex-1 truncate">
-                  {isAdopted ? '👑 다수파가 고른 다음 화' : '🌱 이 루트의 다음 화'} · “{choice.label}”
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">
+                    {isAdopted ? '👑 ' : '🌱 '}
+                    {target?.no}화 · {target?.title}
+                  </span>
+                  <span className="block truncate text-[10.5px] font-medium" style={{ color: 'var(--ink-mute)' }}>
+                    “{choice.label}”
+                  </span>
                 </span>
                 <span className="shrink-0">→</span>
               </Link>
             )
           })}
+        </div>
+      )}
+
+      {!canVote && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => setShareOpen(true)}>
+            결과 카드 공유
+          </button>
+          {!mine && closed && (
+            <span className="text-[11.5px]" style={{ color: 'var(--ink-mute)' }}>
+              투표가 마감되어 결과만 볼 수 있습니다.
+            </span>
+          )}
         </div>
       )}
 

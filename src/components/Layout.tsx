@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useStore } from '../store/StoreProvider'
 import { allSessions } from '../lib/play'
 import { Icon } from './Icon'
@@ -20,6 +20,9 @@ const THEME_LABEL: Record<ThemeName, string> = { light: '라이트', sepia: '세
 export function Layout({ children }: { children: ReactNode }) {
   const { settings, setTheme, toast, wallet, hasPass, passDays, openPricing } = useStore()
   const startedCount = Object.values(allSessions()).filter((session) => session.picks.length > 0).length
+  const location = useLocation()
+  // 회차 읽기 화면에서는 독서용 하단 바가 자리를 대신합니다.
+  const readingMode = /\/(ep\/[^/]+|read|play)$/.test(location.pathname)
 
   return (
     <div className="min-h-dvh flex flex-col">
@@ -146,7 +149,7 @@ export function Layout({ children }: { children: ReactNode }) {
       </footer>
 
       {/* 모바일 하단 내비게이션 */}
-      <nav className="mobile-nav md:hidden">
+      <nav className="mobile-nav md:hidden" data-hidden={readingMode}>
         <div className="grid grid-cols-5">
           {NAV.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end} className="mobile-nav-link">
