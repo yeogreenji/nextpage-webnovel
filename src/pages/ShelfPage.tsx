@@ -234,7 +234,7 @@ export function ShelfPage() {
                               ? '내 소설 완성 · 엔딩 확인하기'
                               : progress.done > 0
                                 ? `${progress.done}/${progress.total} 선택 — 이어 쓰기`
-                                : `${flow.scenes.length}장면 · 엔딩 ${flow.endings.length}개`
+                                : `${flow.scenes.length}화 · 엔딩 ${flow.endings.length}개`
                             : '회차 연재 중'}
                         </span>
                       </div>

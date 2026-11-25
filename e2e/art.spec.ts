@@ -139,9 +139,10 @@ for (const novel of ['nv-secretary', 'nv-nextdoor', 'nv-younger', 'nv-villainess
       expect(poster.alt ?? '').not.toBe('')
     }
 
-    // 플레이(선택형 소설) — 6장면을 넘기며 장면 그림이 매번 로드되는지
+    // 플레이(선택형 소설) — 마지막 화까지 넘기며 장면 그림이 매번 로드되는지
+    const flow = ALL_FLOWS.find((item) => item.novelId === novel)!
     await page.goto(`/#/novel/${novel}/play`, { waitUntil: 'networkidle' })
-    for (let sceneIndex = 0; sceneIndex < 6; sceneIndex += 1) {
+    for (let sceneIndex = 0; sceneIndex < flow.scenes.length; sceneIndex += 1) {
       const scene = page.locator(`#play-scene-${sceneIndex}`)
       await scene.scrollIntoViewIfNeeded()
       const figure = scene.locator('.play-scene-figure img').first()
@@ -196,8 +197,9 @@ test('기존 작품의 세 번째 갈래 장면(pf-*)도 화면에 그려진다'
 
 test('완성 소설(finale)·정주행(read)·분기 트리 화면도 그림이 깨지지 않는다', async ({ page }) => {
   const novel = 'nv-villainess'
+  const flow = ALL_FLOWS.find((item) => item.novelId === novel)!
   await page.goto(`/#/novel/${novel}/play`, { waitUntil: 'networkidle' })
-  for (let sceneIndex = 0; sceneIndex < 6; sceneIndex += 1) {
+  for (let sceneIndex = 0; sceneIndex < flow.scenes.length; sceneIndex += 1) {
     const scene = page.locator(`#play-scene-${sceneIndex}`)
     await scene.scrollIntoViewIfNeeded()
     await scene.locator('.choice-panel .choice-card').first().click()

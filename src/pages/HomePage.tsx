@@ -120,7 +120,7 @@ export function HomePage() {
         <dl className="stat-bar">
           {[
             { label: '작품', value: `${novels.length}편` },
-            { label: '선택 장면', value: `${sceneTotal}개` },
+            { label: '선택 화수', value: `${sceneTotal}개` },
             { label: '엔딩', value: `${endingTotal}개` },
             { label: '등장인물', value: `${characterCount}인` },
           ].map((stat) => (
@@ -384,7 +384,7 @@ export function HomePage() {
             <p className="eyebrow">All titles</p>
             <h2 className="section-title">연재 중인 작품</h2>
             <p className="section-sub">
-              모든 작품이 여섯 장면, 매 장면 3~4개의 갈래, 그리고 세 개의 엔딩으로 이어집니다.
+              대표작 5편은 22화 장편 아크로, 나머지 작품도 6화 뒤 100화까지 이어 쓸 수 있습니다. 모든 화에 2~3개의 갈래와 세 개의 엔딩.
             </p>
           </div>
           <Link to="/library" className="section-more">
@@ -502,13 +502,13 @@ export function HomePage() {
           {[
             {
               step: '01',
-              title: '장면마다 3~4개의 문장을 고른다',
-              body: '한 작품에 여섯 장면. 고른 즉시 그 결과가 본문에 붙고, 그 문장이 다음 장면으로 이어집니다.',
+              title: '화마다 2~3개의 문장을 고른다',
+              body: '대표작은 22화 장편. 고른 즉시 그 결과가 본문에 붙고, 그 문장이 다음 화로 이어집니다.',
             },
             {
               step: '02',
-              title: '장면 속 인물에게 말을 건다',
-              body: '말을 걸기 좋은 자리에서 인물과 대화하세요. 그 행동과 대사가 본문에 그대로 들어갑니다.',
+              title: '그 화의 인물에게 직접 말을 건다',
+              body: '그 화에 실제로 있는 인물에게 하고 싶은 말을 직접 쓰세요. 그 행동과 대사가 본문에 그대로 들어갑니다.',
             },
             {
               step: '03',
@@ -532,7 +532,7 @@ export function HomePage() {
             <p className="eyebrow">Next Page</p>
             <h2>이 소설의 다음 문장은, 내가 쓴다</h2>
             <p>
-              고르고, 말을 걸고, 완성하세요. {novels.length}편 모두 여섯 장면과 세 개의 엔딩으로
+              고르고, 말을 걸고, 완성하세요. {novels.length}편 모두 세 개의 엔딩, 그리고 100화까지 이어지는 장편으로
               이어집니다.
             </p>
           </div>

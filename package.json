@@ -1,7 +1,7 @@
 {
   "name": "nextpage-webnovel",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "넥스트페이지 — 독자가 A/B 투표로 다음 화를 고르는 선택형(브랜칭) 웹소설 플랫폼",
   "scripts": {
@@ -12,7 +12,8 @@
     "test": "node scripts/test-unit.mjs",
     "test:e2e": "playwright test",
     "check": "npm run typecheck && npm test && npm run build && npm run test:e2e",
-    "audit:story": "node scripts/audit-story.mjs"
+    "audit:story": "node scripts/audit-story.mjs",
+    "shots:longform": "node scripts/shots-longform.mjs"
   },
   "dependencies": {
     "react": "^19.1.1",

@@ -17,6 +17,17 @@ import {
   resolveEnding,
 } from '../src/lib/play'
 import { interactionFor } from '../src/lib/interaction'
+import { nameTokens, presentCast } from '../src/lib/cast'
+import {
+  appendChapter,
+  buildContinueBrief,
+  chapterFromDraft,
+  emptySerial,
+  localChapter,
+  nextSerialNo,
+  normalizeDraft,
+  pickSerial,
+} from '../src/lib/serial'
 import {
   withAndParticle,
   withObjectParticle,
@@ -25,43 +36,53 @@ import {
 } from '../src/lib/format'
 import type { PlaySession, StoryFlow } from '../src/types'
 
-/** 주어진 선택 인덱스들로 진행합니다. */
-function playSteps(flow: StoryFlow, picks: number[]): PlaySession {
+/** 장편 아크(20화 이상)가 붙은 대표작 */
+const LONGFORM_IDS = ['nv-office', 'nv-campus', 'nv-secretary', 'nv-villainess', 'nv-ceo']
+
+/** 주어진 선택 인덱스들로 진행합니다. 모자란 화는 0번 갈래로 채웁니다. */
+function playSteps(flow: StoryFlow, picks: number[], fill = true): PlaySession {
   let session: PlaySession = emptySession(flow.novelId)
-  picks.forEach((pick, index) => {
+  const count = fill ? flow.scenes.length : Math.min(picks.length, flow.scenes.length)
+  for (let index = 0; index < count; index += 1) {
     const scene = flow.scenes[index]
+    const pick = picks[index] ?? 0
     session = pickChoice(flow, session, scene.id, scene.choices[pick % scene.choices.length].id)
-  })
+  }
   return session
 }
 
-/** 마지막 장면만 바꿔 보는 표본 경로 — 3^6 전부 대신 앞선 선택을 몇 가지로 고정합니다. */
+/** 마지막 화만 바꿔 보는 표본 경로 — 앞선 선택을 몇 가지로 고정합니다. */
 function samplePaths(flow: StoryFlow): number[][] {
   const patterns = [
-    [0, 0, 0, 0, 0],
-    [1, 1, 1, 1, 1],
-    [2, 1, 0, 2, 1],
-    [1, 2, 2, 0, 2],
-    [0, 2, 1, 1, 0],
-    [2, 0, 2, 1, 2],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 1, 0, 1, 0, 1, 0, 1],
+    [1, 0, 1, 0, 1, 0, 1, 0],
   ]
+  const prefixLength = Math.max(0, flow.scenes.length - 1)
   const paths: number[][] = []
   for (const pattern of patterns) {
+    const prefix = Array.from({ length: prefixLength }, (_, index) => pattern[index % pattern.length])
     flow.scenes[flow.scenes.length - 1].choices.forEach((_, lastIndex) => {
-      paths.push([...pattern, lastIndex])
+      paths.push([...prefix, lastIndex])
     })
   }
   return paths
 }
 
-describe('25작품 — 장면·갈래·엔딩 구조', () => {
-  it('작품은 25편, 모두 여섯 장면에 3~4개의 갈래와 세 개의 엔딩을 가진다', () => {
+describe('25작품 — 화·갈래·엔딩 구조', () => {
+  it('대표작 5편은 20화 이상 장편, 나머지는 6화 이상이며 모두 2~4개의 갈래와 세 엔딩을 가진다', () => {
     assert.equal(ALL_FLOWS.length, 25)
     for (const flow of ALL_FLOWS) {
-      assert.equal(flow.scenes.length, 6, flow.novelId)
+      const longform = LONGFORM_IDS.includes(flow.novelId)
+      assert.ok(
+        longform ? flow.scenes.length >= 20 : flow.scenes.length >= 6,
+        `${flow.novelId}: ${flow.scenes.length}화`,
+      )
+      if (longform) assert.ok((flow.parts?.length ?? 0) >= 2, `${flow.novelId}: 부 구분`)
       for (const scene of flow.scenes) {
         assert.ok(
-          scene.choices.length >= 3 && scene.choices.length <= 4,
+          scene.choices.length >= 2 && scene.choices.length <= 4,
           `${scene.id}: 선택지 ${scene.choices.length}`,
         )
       }
@@ -69,9 +90,9 @@ describe('25작품 — 장면·갈래·엔딩 구조', () => {
     }
   })
 
-  it('마지막 장면에는 A·B·C 갈래가 하나씩 있다', () => {
+  it('마지막 화에는 A·B·C 갈래가 하나씩 있다', () => {
     for (const flow of ALL_FLOWS) {
-      const last = flow.scenes[5]
+      const last = flow.scenes[flow.scenes.length - 1]
       assert.equal(last.choices.map((choice) => choice.tone).sort().join(''), 'ABC', last.id)
     }
   })
@@ -99,7 +120,8 @@ describe('25작품 — 장면·갈래·엔딩 구조', () => {
     for (const flow of ALL_FLOWS) {
       const paths = samplePaths(flow)
       const endings = paths.map((path) => resolveEnding(flow, playSteps(flow, path))?.id)
-      const lastTones = paths.map((path) => path[5])
+      const prefixLength = Math.max(0, flow.scenes.length - 1)
+      const lastTones = paths.map((path) => path[prefixLength])
       const byTone = new Map<number, Set<string | undefined>>()
       lastTones.forEach((tone, index) => {
         const set = byTone.get(tone) ?? new Set<string | undefined>()
@@ -114,9 +136,9 @@ describe('25작품 — 장면·갈래·엔딩 구조', () => {
     }
   })
 
-  it('6장 앞에서는 아직 엔딩이 정해지지 않는다', () => {
+  it('마지막 화 앞에서는 아직 엔딩이 정해지지 않는다', () => {
     for (const flow of ALL_FLOWS) {
-      const session = playSteps(flow, [0, 0, 0, 0, 0])
+      const session = playSteps(flow, new Array(Math.max(0, flow.scenes.length - 1)).fill(0), false)
       assert.equal(resolveEnding(flow, session), null)
       assert.equal(progressOf(flow, session).complete, false)
     }
@@ -151,12 +173,13 @@ describe('이음 문단 — 선택 결과가 다음 장면 첫머리에 붙는�
   })
 })
 
-describe('말 걸기 지점 — 장면 안에서만 열린다', () => {
-  it('장면마다 추천 대사 4개와 행동 요약이 준비된다', () => {
+describe('말 걸기 지점 — 화 안에서만 열린다', () => {
+  it('화마다 이 화 전용 힌트 3개와 행동 요약이 준비된다', () => {
     for (const flow of ALL_FLOWS) {
       for (const scene of flow.scenes) {
         const interaction = interactionFor(scene, { id: 'x', name: '서준', role: '', tag: '남주', quote: '' })
-        assert.equal(interaction.prompts.length, 4, scene.id)
+        assert.ok(interaction.prompts.length >= 2, scene.id)
+        assert.ok(interaction.prompts.length <= 3, scene.id)
         assert.ok(interaction.cue.length > 10, scene.id)
         assert.ok(interaction.action.length > 5, scene.id)
         assert.equal(interaction.action.includes('{name}'), false, scene.id)
@@ -335,7 +358,8 @@ describe('스토리 데이터 린트', () => {
 
   it('structure 문구가 실제 구조와 맞는다', () => {
     for (const flow of ALL_FLOWS) {
-      assert.equal(flow.structure, '여섯 장면 · 장면마다 3~4개의 갈래 · 세 개의 엔딩')
+      assert.ok(flow.structure.includes(`${flow.scenes.length}화`), flow.novelId)
+      assert.ok(flow.structure.includes('엔딩'), flow.novelId)
     }
   })
 
@@ -356,5 +380,125 @@ describe('스토리 데이터 린트', () => {
       if (matches) offenders.push(`${file}: ${matches.join(', ')}`)
     }
     assert.deepEqual(offenders, [])
+  })
+})
+
+describe('캐릭터 톡 — 이 화에 있는 사람만', () => {
+  it('모든 화의 말 걸기 상대가 그 화에 실제로 있다', () => {
+    const seed = buildSeed()
+    const art = attachArt(seed.novels, seed.episodes)
+    const novelById = new Map(art.novels.map((novel) => [novel.id, novel]))
+    const problems: string[] = []
+    for (const flow of ALL_FLOWS) {
+      const novel = novelById.get(flow.novelId)
+      assert.ok(novel, flow.novelId)
+      for (const scene of flow.scenes) {
+        const cast = presentCast(novel, scene)
+        if (!cast.some((character) => character.id === scene.speakerId)) {
+          problems.push(`${scene.id}: 말을 거는 인물이 이 화에 없음`)
+        }
+        const text = [scene.title, scene.place, ...scene.body].join(' ')
+        for (const id of scene.cast ?? []) {
+          const who = (novel.characters ?? []).find((character) => character.id === id)
+          if (!who) problems.push(`${scene.id}: 없는 인물 id ${id}`)
+          else if (!nameTokens(who.name).some((token) => text.includes(token))) {
+            problems.push(`${scene.id}: ${who.name} 이(가) 화 본문에 없음`)
+          }
+        }
+      }
+    }
+    assert.deepEqual(problems, [])
+  })
+
+  it('추천 힌트가 화마다 복붙되지 않는다', () => {
+    const seen = new Map<string, string[]>()
+    for (const flow of ALL_FLOWS) {
+      for (const scene of flow.scenes) {
+        for (const prompt of scene.interaction?.prompts ?? []) {
+          const key = prompt.trim()
+          seen.set(key, [...(seen.get(key) ?? []), scene.id])
+        }
+      }
+    }
+    const duplicated = [...seen.entries()].filter(([, scenes]) => scenes.length > 1)
+    assert.deepEqual(duplicated.map(([prompt, scenes]) => `${prompt} → ${scenes.join(',')}`), [])
+  })
+
+  it('대표작 장편 아크는 부·이어쓰기 씨앗·세 엔딩을 갖춘다', () => {
+    for (const flow of ALL_FLOWS) {
+      if (flow.scenes.length < 20) continue
+      const parts = flow.parts ?? []
+      assert.ok(parts.length >= 2, flow.novelId)
+      assert.equal(parts[0].from, 1, flow.novelId)
+      assert.equal(parts[parts.length - 1].to, flow.scenes.length, flow.novelId)
+      for (let index = 1; index < parts.length; index += 1) {
+        assert.equal(parts[index].from, parts[index - 1].to + 1, flow.novelId)
+      }
+      assert.ok((flow.serial?.beats.length ?? 0) >= 4, flow.novelId)
+      assert.equal(flow.endings.length, 3, flow.novelId)
+    }
+  })
+})
+
+describe('장편 이어쓰기 — 다음 화를 계속 쓴다', () => {
+  const flow = ALL_FLOWS.find((item) => item.novelId === 'nv-secretary')!
+  const seed = buildSeed()
+  const art = attachArt(seed.novels, seed.episodes)
+  const novel = art.novels.find((item) => item.id === 'nv-secretary')!
+
+  it('내 선택과 대화를 재료로 다음 화 씨앗을 만든다', () => {
+    const session = playSteps(flow, [0, 0, 0, 0, 0, 0])
+    session.applied = []
+    const state = emptySerial(novel.id, flow.scenes.length)
+    const brief = buildContinueBrief({ novel, flow, session, state })
+    assert.equal(brief.nextNo, flow.scenes.length + 1)
+    assert.equal(brief.target, 100)
+    assert.ok(brief.cast.length >= 3)
+    assert.ok(brief.memory.picks.length > 0)
+    assert.ok(brief.beat.length > 4)
+  })
+
+  it('기기 안 집필도 화·갈래·다음 화 예고를 갖춘 초안을 낸다', () => {
+    const state = emptySerial(novel.id, flow.scenes.length)
+    const brief = buildContinueBrief({ novel, flow, session: null, state })
+    const draft = localChapter(brief)
+    assert.ok(draft.title.length > 0)
+    assert.ok(draft.body.length >= 3)
+    assert.ok(draft.teaser.length > 0)
+    assert.equal(draft.choices.length, 2)
+    assert.equal(draft.choices[0].tone === draft.choices[1].tone, false)
+  })
+
+  it('쓴 화를 쌓고 갈래를 고르면 다음 화 번호와 결이 이어진다', () => {
+    let state = emptySerial(novel.id, flow.scenes.length)
+    for (let index = 0; index < 3; index += 1) {
+      const brief = buildContinueBrief({ novel, flow, session: null, state })
+      const draft = localChapter(brief)
+      state = appendChapter(state, chapterFromDraft(brief.nextNo, draft, ['테스트'], 'local'))
+    }
+    assert.equal(state.chapters.length, 3)
+    assert.equal(nextSerialNo(state), flow.scenes.length + 4)
+    const picked = pickSerial(state, state.chapters[0].no, {
+      label: state.chapters[0].choices[0].label,
+      tone: state.chapters[0].choices[0].tone,
+    })
+    assert.ok(picked.chapters[0].picked)
+    assert.equal(picked.chapters[1].picked, null)
+  })
+
+  it('AI 응답 정규화 — 형식이 어긋나면 버리고, 맞으면 받아들인다', () => {
+    assert.equal(normalizeDraft(null), null)
+    assert.equal(normalizeDraft({ title: '', body: [] }), null)
+    const draft = normalizeDraft({
+      title: '새 화',
+      place: '27층',
+      body: ['첫 문단입니다.', '둘째 문단입니다.'],
+      teaser: '다음 화 예고',
+      choices: [{ label: '간다', hint: '지금' }, { label: '기다린다', hint: '내일' }],
+    })
+    assert.ok(draft)
+    assert.equal(draft?.choices.length, 2)
+    assert.equal(draft?.choices[0].tone, 'A')
+    assert.equal(draft?.choices[1].tone, 'B')
   })
 })

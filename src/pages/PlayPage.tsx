@@ -7,7 +7,9 @@ import { ReadingProgress } from '../components/ReadingProgress'
 import { withAndParticle } from '../lib/format'
 import { ReaderToolbar } from '../components/ReaderToolbar'
 import { SceneChat } from '../components/SceneChat'
+import { SerialWriter } from '../components/SerialWriter'
 import { interactionFor } from '../lib/interaction'
+import { presentCast } from '../lib/cast'
 import { endingProgress, unlockEnding } from '../lib/library'
 import type { AppliedInput } from '../lib/play'
 import type { AppliedLine, PlayChoice, PlayScene, PlaySession } from '../types'
@@ -29,10 +31,10 @@ import {
 
 /**
  * ✨ 내가 선택하는 대로 완성되는 소설 — 플레이/집필 화면.
- * - 장면마다 3~4개의 갈래, 고르는 즉시 결과 문단이 본문에 붙고 다음 장면이 열립니다.
- * - 장면 중간, 말을 걸기 좋은 자리에서 인물과 대화합니다.
- *   말을 걸면 행동 요약과 대사가 그 자리에 그대로 소설로 들어갑니다.
- * - 여섯 번 고르면 '내가 완성한 소설'로 이어집니다.
+ * - 화마다 2~3개의 갈래, 고르는 즉시 결과 문단이 본문에 붙고 다음 화가 열립니다.
+ * - 대표작은 20화 이상 장편 아크(부 단위)로 이어지고, 마지막 화에서 엔딩이 정해집니다.
+ * - 아크가 끝나도 '장편 이어쓰기'로 25화 → 100화까지 계속 씁니다.
+ * - 화 중간, 말을 걸기 좋은 자리에서 그 화에 있는 인물과 직접 대화합니다.
  */
 export function PlayPage() {
   const { novelId = '' } = useParams()
@@ -98,7 +100,7 @@ export function PlayPage() {
           })
         }
       }, 240)
-      if (next.picks.length >= flow.scenes.length) notify('당신의 소설이 완성됐어요')
+      if (next.picks.length >= flow.scenes.length) notify(`${flow.scenes.length}화 완결 — 한 편이 됐어요`)
     },
     [flow, notify, session],
   )
@@ -198,7 +200,7 @@ export function PlayPage() {
         <div className="play-bar-meta">
           <span className="play-count">
             {progress.done}
-            <span>/{progress.total} 선택</span>
+            <span>/{progress.total}화</span>
           </span>
           <button type="button" className="play-bar-btn" onClick={() => setRecordOpen((value) => !value)}>
             선택 기록
@@ -230,17 +232,18 @@ export function PlayPage() {
           <p className="play-intro-tagline">{novel.tagline}</p>
           <ul className="play-intro-rules">
             <li>
-              <b>{flow.scenes.length}장면</b>, 장면마다 <b>3~4개의 갈래</b> — 마음에 드는 문장을
-              고릅니다.
+              <b>{flow.scenes.length}화</b>
+              {flow.parts && flow.parts.length > 1 ? ` (${flow.parts.length}부)` : ''}, 화마다{' '}
+              <b>2~3개의 갈래</b> — 마음에 드는 문장을 고릅니다.
             </li>
-            <li>고른 즉시 <b>결과 문단</b>이 본문에 붙고, 그 문장이 다음 장면으로 이어집니다.</li>
+            <li>고른 즉시 <b>결과 문단</b>이 본문에 붙고, 그 문장이 다음 화로 이어집니다.</li>
             <li>
-              장면 중간 <b>말 걸기 좋은 자리</b>에서 인물과 대화합니다. 말을 걸면 그 행동과 대사가
-              소설에 그대로 들어갑니다.
+              화 중간 <b>말 걸기 좋은 자리</b>에서 그 화에 있는 인물과 직접 대화합니다. 내가 쓴 말과
+              대사가 소설에 그대로 들어갑니다.
             </li>
             <li>
-              마지막에 <b>{flow.endings.length}개의 엔딩</b> 중 하나 — 마지막 장면에서 고른 선택이
-              엔딩을 정합니다.
+              마지막에 <b>{flow.endings.length}개의 엔딩</b> 중 하나 — 그리고 그 뒤로{' '}
+              <b>{flow.serial?.target ?? 100}화까지</b> 이어 쓸 수 있습니다.
             </li>
           </ul>
           <div className="play-intro-tools">
@@ -257,16 +260,30 @@ export function PlayPage() {
           const choice = scene.choices.find((item) => item.id === pick?.choiceId)
           const isCurrent = sceneIndex === done && !ending
           const lines = appliedFor(activeSession, scene.id)
-          const speaker = characters.find((item) => item.id === scene.speakerId) ?? characters[0]
+          const present = presentCast(novel, scene, flow.scenes)
+          const speaker =
+            present.find((item) => item.id === scene.speakerId) ?? present[0] ?? characters[0]
           const interaction = interactionFor(scene, speaker)
           const anchor = interactionAnchorOf(scene)
           const spoke = lines.length > 0
+          const part = flow.parts?.find((item) => item.from === scene.no) ?? null
+          const partIndex = part && flow.parts ? flow.parts.indexOf(part) + 1 : 0
+          const nextScene = flow.scenes[sceneIndex + 1] ?? null
+          const teaser = scene.teaser ?? (nextScene ? `다음 화 · ${nextScene.title}` : null)
           const openChat = (text?: string) => {
             setChatSceneId(scene.id)
             setChatSeed(text ?? null)
           }
 
           return (
+            <Fragment key={scene.id}>
+              {part && (
+                <div className="play-part">
+                  <p className="play-part-kicker">Part {partIndex}</p>
+                  <h2 className="play-part-title">{part.title}</h2>
+                  <p className="play-part-kicker-sub">{part.kicker}</p>
+                </div>
+              )}
             <article
               id={`play-scene-${sceneIndex}`}
               key={scene.id}
@@ -274,7 +291,7 @@ export function PlayPage() {
               data-state={isCurrent ? 'current' : 'done'}
             >
               <header className="play-scene-head">
-                <span className="play-scene-no">{scene.no}장</span>
+                <span className="play-scene-no">{scene.no}화</span>
                 <div className="min-w-0">
                   <h2 className="play-scene-title">{scene.title}</h2>
                   <p className="play-scene-place">{scene.place}</p>
@@ -293,7 +310,7 @@ export function PlayPage() {
                     )}
                     <div className="min-w-0">
                       <p className="play-scene-card-who">
-                        이 장면의 인물 · <b>{speaker.name}</b>
+                        이 화의 인물 · <b>{speaker.name}</b>
                       </p>
                       {speaker.quote && <p className="play-scene-card-quote">“{speaker.quote}”</p>}
                     </div>
@@ -357,20 +374,25 @@ export function PlayPage() {
                               className="speak-gate-open"
                               onClick={() => openChat()}
                             >
-                              {withAndParticle(speaker?.name ?? '인물')} 지금 말 걸기
-                              <em>소설에 반영됨</em>
+                              {withAndParticle(speaker?.name ?? '인물')} 직접 말 걸기
+                              <em>내가 쓴 말이 소설에 들어감</em>
                             </button>
-                            <div className="speak-gate-prompts" aria-label="추천 대사">
-                              {interaction.prompts.map((prompt) => (
-                                <button
-                                  key={prompt}
-                                  type="button"
-                                  onClick={() => openChat(prompt)}
-                                >
-                                  {prompt.startsWith('“') ? prompt : `“${prompt}”`}
-                                </button>
-                              ))}
-                            </div>
+                            {interaction.prompts.length > 0 && (
+                              <div className="speak-gate-hints">
+                                <span className="speak-gate-hints-label">이 화에서만 쓰는 힌트</span>
+                                <div className="speak-gate-prompts" aria-label="이 화의 힌트">
+                                  {interaction.prompts.map((prompt) => (
+                                    <button
+                                      key={prompt}
+                                      type="button"
+                                      onClick={() => openChat(prompt)}
+                                    >
+                                      {prompt.startsWith('“') ? prompt : `“${prompt}”`}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </>
@@ -390,13 +412,14 @@ export function PlayPage() {
                       <p key={index}>{paragraph}</p>
                     ))}
                   </div>
+                  {teaser && <p className="play-teaser">다음 화 예고 — {teaser}</p>}
                 </div>
               )}
 
               {isCurrent && (
                 <div className="choice-panel">
                   <p className="choice-prompt">
-                    이 장면에서, 나는 —
+                    이 화에서, 나는 —
                   </p>
                   <div className="choice-grid">
                     {scene.choices.map((item, choiceIndex) => (
@@ -418,7 +441,7 @@ export function PlayPage() {
                   </div>
                   <div className="choice-foot">
                     <span className="hidden sm:inline">
-                      키보드 1 · 2 · 3 · {scene.choices.length} 로도 고를 수 있어요
+                      키보드 {scene.choices.map((_, index) => index + 1).join(' · ')} 로도 고를 수 있어요
                     </span>
                     <button
                       type="button"
@@ -437,10 +460,11 @@ export function PlayPage() {
                   className="play-scene-chat"
                   onClick={() => openChat()}
                 >
-                  {scene.no}장에서 {withAndParticle(speaker.name)} 나눈 대화 · 대사 가져오기
+                  {scene.no}화에서 {withAndParticle(speaker.name)} 나눈 대화 · 대사 가져오기
                 </button>
               )}
             </article>
+            </Fragment>
           )
         })}
       </div>
@@ -448,8 +472,10 @@ export function PlayPage() {
       {/* 완성 */}
       {ending && (
         <section id="play-finish" className="play-finish">
-          <p className="eyebrow">Completed · {progress.total} / {progress.total}</p>
-          <h2>당신의 소설이 완성됐습니다</h2>
+          <p className="eyebrow">
+            Part complete · {progress.total} / {progress.total}화
+          </p>
+          <h2>{progress.total}화, 한 편이 됐습니다</h2>
           <p className="play-finish-ending">
             도달한 엔딩 — <b>{ending.name}</b>
           </p>
@@ -457,7 +483,7 @@ export function PlayPage() {
 
           <dl className="play-finish-stats">
             <div>
-              <dt>내가 고른 분기</dt>
+              <dt>내가 고른 갈래</dt>
               <dd>{progress.total}번</dd>
             </div>
             <div>
@@ -469,7 +495,7 @@ export function PlayPage() {
               <dd>{ending.name}</dd>
             </div>
             <div>
-              <dt>마지막 선택의 갈래</dt>
+              <dt>마지막 갈래</dt>
               <dd>{activeSession.picks[flow.scenes.length - 1]?.tone}</dd>
             </div>
           </dl>
@@ -483,8 +509,11 @@ export function PlayPage() {
               className="btn btn-secondary"
               onClick={() => rewind(flow.scenes.length - 1)}
             >
-              마지막 선택 다시 하기
+              마지막 갈래 다시 고르기
             </button>
+            <a href="#serial" className="btn btn-secondary">
+              {flow.scenes.length + 1}화부터 이어 쓰기 ↓
+            </a>
             <Link to="/shelf" className="btn btn-ghost">
               엔딩 도감 보기
             </Link>
@@ -502,11 +531,14 @@ export function PlayPage() {
             </p>
           )}
           <p className="play-finish-note">
-            엔딩은 마지막 장면에서 고른 선택이 정합니다. 마지막 선택 하나를 바꾸면 다른 엔딩이 열리고,
-            이 작품에는 엔딩이 {flow.endings.length}개 있습니다.
+            엔딩은 마지막 화에서 고른 갈래가 정합니다. 여기서 끝내지 않고, 내 선택과 대화를 기억해{' '}
+            {flow.serial?.target ?? 100}화까지 계속 이어 쓸 수 있습니다.
           </p>
         </section>
       )}
+
+      {/* 장편 이어쓰기 — 엔딩 뒤에도 계속 */}
+      {ending && <SerialWriter novel={novel} flow={flow} session={activeSession} />}
 
       {/* 선택 기록 */}
       {recordOpen && (
@@ -533,7 +565,7 @@ export function PlayPage() {
                       disabled={state === 'future'}
                       onClick={() => rewind(sceneIndex)}
                     >
-                      <span className="play-record-no">{scene.no}장</span>
+                      <span className="play-record-no">{scene.no}화</span>
                       <span className="play-record-body">
                         <span className="play-record-title">{scene.title}</span>
                         <span className="play-record-pick">
@@ -541,7 +573,7 @@ export function PlayPage() {
                             ? `“${pick.label}”`
                             : state === 'current'
                               ? '지금 고르는 중'
-                              : '아직 오지 않은 장면'}
+                              : '아직 오지 않은 화'}
                         </span>
                       </span>
                       {state === 'picked' && <span className="play-record-back">다시 쓰기</span>}
@@ -571,11 +603,13 @@ export function PlayPage() {
           novel={novel}
           scene={chatScene}
           characters={characters}
+          present={presentCast(novel, chatScene, flow.scenes)}
           picks={activeSession.picks}
           applied={appliedFor(activeSession, chatScene.id) as AppliedLine[]}
           interaction={interactionFor(
             chatScene,
-            characters.find((item) => item.id === chatScene.speakerId) ?? characters[0],
+            presentCast(novel, chatScene, flow.scenes).find((item) => item.id === chatScene.speakerId) ??
+              presentCast(novel, chatScene, flow.scenes)[0] ?? characters[0],
           )}
           initialText={chatSeed ?? undefined}
           onApply={applyLines(chatScene.id)}

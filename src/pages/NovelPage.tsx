@@ -152,7 +152,7 @@ export function NovelPage() {
                 </dd>
               </div>
               <div>
-                <dt>선택 장면</dt>
+                <dt>선택 화수</dt>
                 <dd>{flow ? `${flow.scenes.length}번` : '-'}</dd>
               </div>
               <div>

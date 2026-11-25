@@ -273,7 +273,7 @@ export function FinalePage() {
             <p className="eyebrow">My route</p>
             <h2 className="section-title">내가 만든 루트</h2>
             <p className="mt-1.5 text-[12px]" style={{ color: 'var(--ink-mute)' }}>
-              여섯 번의 선택, {finale.stats.applied}개의 대사, 그리고 {finale.stats.endingName}.
+              {finale.stats.picks}번의 갈래, {finale.stats.applied}개의 대사, 그리고 {finale.stats.endingName}.
             </p>
           </div>
           <span className="chip chip-accent">

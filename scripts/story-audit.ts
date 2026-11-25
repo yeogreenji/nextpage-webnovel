@@ -10,6 +10,8 @@
 import { buildSeed } from '../src/data/seed'
 import { attachArt } from '../src/data/art'
 import { ALL_FLOWS } from '../src/data/flows'
+import { presentCast, povIdOf } from '../src/lib/cast'
+import { SERIAL_BEATS } from '../src/data/flows/longform/beats'
 import type { Episode, Novel, StoryFlow } from '../src/types'
 
 const raw = buildSeed(Date.now())
@@ -239,6 +241,30 @@ for (const f of ALL_FLOWS) {
   const charIds = new Set((n.characters ?? []).map((c) => c.id))
   if (f.scenes.length < 3) err(f.novelId, `장면 ${f.scenes.length}개`)
   if (!f.structure?.trim()) warn(f.novelId, 'structure 문구 없음')
+  // 장편 아크 — 20화 이상이면 부 구분이 있어야 하고, 부는 화 번호를 빈틈없이 덮어야 합니다.
+  if (f.scenes.length >= 20) {
+    if (!f.parts || f.parts.length < 2) err(f.novelId, '장편 아크인데 부(part) 구분이 없습니다')
+    else {
+      let cursor = 1
+      for (const part of f.parts) {
+        if (part.from !== cursor) err(f.novelId, `부 '${part.title}' 시작 화 ${part.from} (기대 ${cursor})`)
+        if (part.to < part.from) err(f.novelId, `부 '${part.title}' 범위 ${part.from}~${part.to}`)
+        if (!part.title?.trim() || !part.kicker?.trim()) warn(f.novelId, `부 '${part.title}' 제목/설명 없음`)
+        cursor = part.to + 1
+      }
+      if (cursor !== f.scenes.length + 1) {
+        err(f.novelId, `부 구분이 마지막 화(${f.scenes.length})까지 닿지 않습니다 (${cursor - 1}화에서 끝남)`)
+      }
+    }
+    if (!f.serial || f.serial.beats.length < 4) err(f.novelId, '장편 이어쓰기 씨앗(serial.beats)이 부족합니다')
+    if (f.serial && f.serial.premise.length < 2) warn(f.novelId, '이어쓰기 세계관(premise)이 부족합니다')
+  } else if (!f.serial && !SERIAL_BEATS[f.novelId] && f.scenes.length >= 6) {
+    info(f.novelId, `정적 아크 ${f.scenes.length}화 — 이어쓰기 씨앗은 기본값을 씁니다`)
+  }
+
+  // 서술자(독자의 화자)는 대화 상대가 아니므로, 본문에 이름이 나와도 경고하지 않습니다.
+  const povId = povIdOf(n)
+  const povIds = new Set<string>(povId ? [povId] : [])
 
   const sceneIds = new Set<string>()
   const titles = new Map<string, number>()
@@ -253,6 +279,34 @@ for (const f of ALL_FLOWS) {
     if (bodyText.length < 150) warn(f.novelId, `${s.id} 본문 짧음 ${bodyText.length}자`)
     if (s.choices.length < 2 || s.choices.length > 4) err(f.novelId, `${s.id} 선택지 ${s.choices.length}개`)
     if (!charIds.has(s.speakerId)) err(f.novelId, `${s.id} speakerId(${s.speakerId}) 가 인물 카드에 없음`)
+    // 이 화에 실제로 있는 사람 — 말을 거는 상대도, 대화 상대로 열리는 사람도 여기서만 나옵니다.
+    const present = presentCast(n, s)
+    const presentIds = new Set(present.map((c) => c.id))
+    if (present.length === 0) err(f.novelId, `${s.id} 이 화에 있는 인물이 한 명도 없습니다`)
+    if (!presentIds.has(s.speakerId)) err(f.novelId, `${s.id} 말을 거는 인물(${s.speakerId})이 이 화에 없습니다`)
+    if (s.cast) {
+      if (s.cast.length === 0) err(f.novelId, `${s.id} cast 가 비어 있습니다`)
+      for (const id of s.cast) {
+        const who = (n.characters ?? []).find((c) => c.id === id)
+        if (!who) err(f.novelId, `${s.id} cast 에 없는 인물 id ${id}`)
+        else if (!presentIds.has(id)) err(f.novelId, `${s.id} cast 의 ${who.name} 이(가) 이 화에 없습니다`)
+      }
+    }    const sceneText = [s.title, s.place, ...(s.body ?? [])].join(' ')
+    const actionText = s.interaction?.action ?? ''
+    const promptText = [s.interaction?.cue ?? '', ...(s.interaction?.prompts ?? [])].join(' ')
+    for (const other of n.characters ?? []) {
+      if (presentIds.has(other.id) || povIds.has(other.id)) continue
+      const tokens = [other.name.replace(/\s+/g, ' '), other.name.split(' ')[0]]
+      if (tokens.some((token) => token.length >= 2 && actionText.includes(token))) {
+        err(f.novelId, `${s.id} 말 걸기 행동 지문이 이 화에 없는 ${other.name} 을(를) 부릅니다`)
+      }
+      if (tokens.some((token) => token.length >= 2 && promptText.includes(token))) {
+        warn(f.novelId, `${s.id} 힌트가 이 화에 없는 ${other.name} 을(를) 언급합니다`)
+      }
+      if (tokens.some((token) => token.length >= 3 && sceneText.includes(token))) {
+        warn(f.novelId, `${s.id} 이 화에 없는 ${other.name} 이름이 본문에 나옵니다`)
+      }
+    }
     // 말 걸기 지점
     if (s.interaction) {
       const it = s.interaction
@@ -338,14 +392,15 @@ for (const f of ALL_FLOWS) {
 
   // 말을 거는 인물이 장면에 실제로 있는지
   f.scenes.forEach((s) => {
-    const speaker = (n.characters ?? []).find((c) => c.id === s.speakerId)
+    const present = presentCast(n, s)
+    const speaker = present.find((c) => c.id === s.speakerId)
     if (!speaker) return
     const text = [...(s.body ?? []), ...s.choices.flatMap((c) => c.result ?? [])].join(' ')
     const names = new Set([speaker.name, ...speaker.name.split(/\s+/)])
     if (speaker.name.replace(/\s/g, '').length >= 3) names.add(speaker.name.slice(1))
     if ([...names].every((nm) => nm.length < 2)) return
     if (![...names].some((nm) => nm.length >= 2 && text.includes(nm))) {
-      warn(f.novelId, `${s.id} 대화 상대 ${speaker.name} 이(가) 장면 본문에 나오지 않음`)
+      warn(f.novelId, `${s.id} 대화 상대 ${speaker.name} 이(가) 화 본문에 나오지 않음`)
     }
   })
 
@@ -363,6 +418,37 @@ for (const f of ALL_FLOWS) {
 }
 
 for (const n of novels) if (!flowByNovel.has(n.id)) err(n.id, '인터랙티브 흐름 없음')
+
+/* ───────────────────────── 힌트 복붙 검사 ───────────────────────── */
+
+// 같은 추천 멘트가 여러 화·여러 작품에 복붙되면, 독자는 결국 아무것도 고르지 않게 됩니다.
+const promptSeen = new Map<string, string[]>()
+for (const f of ALL_FLOWS) {
+  for (const s of f.scenes) {
+    for (const prompt of s.interaction?.prompts ?? []) {
+      const key = prompt.replace(/\s+/g, ' ').trim()
+      if (key.length < 6) continue
+      promptSeen.set(key, [...(promptSeen.get(key) ?? []), `${f.novelId}/${s.id}`])
+    }
+  }
+}
+for (const [prompt, where] of promptSeen) {
+  if (where.length > 1) {
+    warn('전체', `같은 추천 멘트가 ${where.length}곳에 복붙됨: ${where.join(', ')} → “${prompt.slice(0, 30)}…”`)
+  }
+}
+
+/* ───────────────────────── 이어쓰기 씨앗 검사 ───────────────────────── */
+
+for (const f of ALL_FLOWS) {
+  const beats = f.serial?.beats ?? []
+  const dupBeats = beats.filter((beat, index) => beats.indexOf(beat) !== index)
+  if (dupBeats.length > 0) err(f.novelId, `이어쓰기 씨앗 중복: ${dupBeats[0]}`)
+  if (f.parts) {
+    const titles = f.parts.map((part) => part.title)
+    if (new Set(titles).size !== titles.length) warn(f.novelId, '부 제목 중복')
+  }
+}
 
 /* ───────────────────────── 장면 본문 복붙 (작품 간) ───────────────────────── */
 
@@ -412,7 +498,7 @@ for (const n of novels) {
   const avg = Math.round(pub.reduce((s, e) => s + e.body.replace(/\s/g, '').length, 0) / Math.max(1, pub.length))
   const issues = problems.filter((p) => p.where === n.id)
   console.log(
-    `${n.id.padEnd(16)} 회차 ${String(eps.length).padStart(3)} (발행 ${pub.length}/집필 ${pend.length}) 도달 ${reach} 평균 ${avg}자 · 흐름 ${f ? `${f.scenes.length}장면/${f.endings.length}엔딩` : '없음'} · 문제 ${issues.length}`,
+    `${n.id.padEnd(16)} 회차 ${String(eps.length).padStart(3)} (발행 ${pub.length}/집필 ${pend.length}) 도달 ${reach} 평균 ${avg}자 · 흐름 ${f ? `${f.scenes.length}화/${f.parts?.length ?? 1}부/${f.endings.length}엔딩` : '없음'} · 문제 ${issues.length}`,
   )
 }
 

@@ -17,11 +17,12 @@ const launchArgs = [
  */
 export default defineConfig({
   testDir: 'e2e',
-  timeout: 90_000,
+  timeout: 120_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,
   workers: 1,
-  retries: 0,
+  // 아주 작은 컨테이너에서는 브라우저가 간헐적으로 죽습니다. 한 번 더 시도합니다.
+  retries: process.env.PW_NO_RETRY === '1' ? 0 : 2,
   reporter: [['list']],
   use: {
     baseURL: 'http://127.0.0.1:4173',

@@ -1283,3 +1283,422 @@ main .card h2 {
   font-weight: 500;
   letter-spacing: -0.02em;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   장편 아크 (부 머리글 · 다음 화 예고 · 이어쓰기)
+   ═══════════════════════════════════════════════════════════ */
+
+.play-part {
+  margin: 40px 0 6px;
+  padding-top: 26px;
+  border-top: 1px solid var(--line-strong);
+}
+
+.play-part-kicker {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.play-part-title {
+  margin: 6px 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(23px, 3.4vw, 31px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  word-break: keep-all;
+}
+
+.play-part-kicker-sub {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--ink-mute);
+  word-break: keep-all;
+}
+
+.play-teaser {
+  margin: 12px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-mute);
+  word-break: keep-all;
+}
+
+.speak-gate-hints {
+  margin-top: 12px;
+}
+
+.speak-gate-hints-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: var(--ink-mute);
+}
+
+/* 이 화에 있는 사람 / 없는 사람 */
+.scene-chat-cast-label {
+  flex: 0 0 auto;
+  align-self: center;
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: var(--ink-mute);
+  white-space: nowrap;
+}
+
+.chat-tab[data-absent='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+.chat-tab[data-absent='true']:hover {
+  transform: none;
+}
+
+.chat-tab-note {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--ink-mute);
+  white-space: nowrap;
+}
+
+.scene-chat-hints {
+  margin: 10px 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.scene-chat-hints summary {
+  padding: 8px 11px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--ink-mute);
+  cursor: pointer;
+  list-style: none;
+}
+
+.scene-chat-hints summary::-webkit-details-marker {
+  display: none;
+}
+
+.scene-chat-hint-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 11px 10px;
+}
+
+.scene-chat-hint-row button {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.scene-chat-hint-row button:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+/* 장편 이어쓰기 */
+.serial-writer {
+  margin: 34px auto 0;
+  padding: 26px 24px 30px;
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--ink);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.serial-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.serial-head h2 {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.serial-sub {
+  margin: 8px 0 0;
+  max-width: 62ch;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ink-mute);
+  word-break: keep-all;
+}
+
+.serial-count {
+  flex: none;
+  text-align: right;
+  line-height: 1;
+}
+
+.serial-count b {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--accent-strong);
+}
+
+.serial-count span {
+  margin-left: 3px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-mute);
+}
+
+.serial-progress {
+  margin-top: 16px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.serial-progress span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 45%, var(--vs-b)));
+  transition: width 0.4s ease;
+}
+
+.serial-memory {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.serial-memory-label {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: var(--ink-mute);
+}
+
+.serial-memory-chip {
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.serial-chapters {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.serial-chapter {
+  padding: 18px 18px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 86%, var(--bg));
+}
+
+.serial-chapter[data-state='current'] {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
+  box-shadow: var(--shadow);
+}
+
+.serial-chapter-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.serial-chapter-no {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 10.5px;
+  font-weight: 900;
+}
+
+.serial-chapter-head h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  word-break: keep-all;
+}
+
+.serial-chapter-head p {
+  margin: 3px 0 0;
+  font-size: 11px;
+  color: var(--ink-mute);
+  word-break: keep-all;
+}
+
+.serial-source {
+  margin-left: auto;
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 9.5px;
+  font-weight: 800;
+  color: var(--ink-mute);
+}
+
+.serial-source[data-source='ai'] {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  color: var(--accent-strong);
+}
+
+.serial-body {
+  margin-top: 12px;
+}
+
+.serial-body p {
+  margin: 0 0 0.85em;
+}
+
+.serial-choices {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line-strong);
+}
+
+.serial-choices-label {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--ink-mute);
+}
+
+.serial-choice-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.serial-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--ink);
+  word-break: keep-all;
+  cursor: pointer;
+}
+
+.serial-choice span {
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--accent-strong);
+}
+
+.serial-choice[data-tone='B'] span {
+  color: var(--vs-b);
+}
+
+.serial-choice em {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ink-mute);
+}
+
+.serial-choice:hover {
+  border-color: var(--accent);
+}
+
+.serial-picked {
+  margin: 12px 0 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--accent-strong);
+  word-break: keep-all;
+}
+
+.serial-teaser {
+  margin: 10px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  font-size: 11.5px;
+  color: var(--ink-mute);
+  word-break: keep-all;
+}
+
+.serial-tools {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.serial-next {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  word-break: keep-all;
+}
+
+.serial-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.serial-note {
+  margin: 12px 0 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--ink-mute);
+  word-break: keep-all;
+}
+
+@media (max-width: 640px) {
+  .serial-writer {
+    padding: 20px 16px 24px;
+  }
+
+  .serial-head {
+    flex-direction: column;
+  }
+
+  .serial-count {
+    text-align: left;
+  }
+
+  .serial-actions .btn {
+    flex: 1 1 auto;
+  }
+}

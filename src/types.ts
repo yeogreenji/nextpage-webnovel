@@ -175,10 +175,10 @@ export interface PlayChoice {
   lead?: string[]
 }
 
-/** 한 장면 = 한 번의 선택 (3~4지선다) */
+/** 한 장면 = 한 화 = 한 번의 선택 (2~4지선다) */
 export interface PlayScene {
   id: string
-  /** 장면 번호 (1부터). 화면에는 '1장'으로 표시 */
+  /** 화 번호 (1부터). 화면에는 '1화'로 표시 */
   no: number
   title: string
   /** 장면 위에 붙는 위치·시간 한 줄 */
@@ -194,6 +194,14 @@ export interface PlayScene {
   choices: PlayChoice[]
   /** 이 장면에서 대화할 인물 id (novel.characters 기준) */
   speakerId: string
+  /**
+   * 이 화에 실제로 서 있는 인물 id (novel.characters 기준).
+   * — 적혀 있으면 이 목록만 대화 상대로 열립니다.
+   * — 비어 있으면 본문·장소에 이름이 나오는 인물만 '이 자리에 있는 사람'으로 봅니다.
+   */
+  cast?: string[]
+  /** 다음 화 예고 — 선택을 마친 뒤 '다음 화가 궁금한' 한 줄 */
+  teaser?: string
   /** 장면 일러스트 (public 기준 경로) */
   image?: string
   /** 말 걸기 지점 — 없으면 본문 마지막 문단 뒤에 기본 지점이 생깁니다 */
@@ -213,13 +221,37 @@ export interface PlayEnding {
   tone: ChoiceTone
 }
 
+/** 한 부(部) — 장편 아크의 묶음. 화면에서 '1부 …' 머리글로 표시됩니다. */
+export interface FlowPart {
+  title: string
+  kicker: string
+  /** 시작 화 번호 (1부터, 포함) */
+  from: number
+  /** 끝 화 번호 (포함) */
+  to: number
+}
+
+/** AI·기기 안 장편 이어쓰기의 재료 — 작품별 세계관·다음 화 씨앗 */
+export interface SerialBlueprint {
+  /** 이어쓰기 목표 화수 (보통 100) */
+  target: number
+  /** 세계관·인물 관계 한 줄들 (프롬프트에 그대로 들어갑니다) */
+  premise: string[]
+  /** 다음 화 씨앗 — 화마다 하나씩 돌려 씁니다 */
+  beats: string[]
+}
+
 /** 한 작품의 인터랙티브 흐름 */
 export interface StoryFlow {
   novelId: string
-  /** 예: '여섯 장면 · 장면마다 3~4개의 갈래 · 세 개의 엔딩' */
+  /** 예: '24화 · 4부 · 화마다 2~3개의 갈래 · 세 개의 엔딩' */
   structure: string
   scenes: PlayScene[]
   endings: PlayEnding[]
+  /** 장편 아크의 부 구분 (없으면 한 부) */
+  parts?: FlowPart[]
+  /** 정적 아크 이후 이어쓰기 재료 (없으면 기본값) */
+  serial?: SerialBlueprint
 }
 
 /** 독자가 고른 선택 한 번 */
@@ -241,6 +273,37 @@ export interface AppliedLine {
   kind: 'character' | 'user' | 'action'
   text: string
   at: string
+}
+
+/** ─────────────── 장편 이어쓰기 (정적 아크 이후 25화 → 100화) ─────────────── */
+
+/** AI·기기 안에서 새로 쓴 한 화 */
+export interface SerialChapter {
+  /** 화 번호 — 정적 아크의 다음 번호부터 */
+  no: number
+  title: string
+  place: string
+  body: string[]
+  /** 다음 화 예고 한 줄 */
+  teaser: string
+  /** 이 화에서 고를 갈래 (2개) */
+  choices: { label: string; hint: string; tone: ChoiceTone }[]
+  /** 이 화에서 고른 갈래 (아직 안 골랐으면 null) */
+  picked: { label: string; tone: ChoiceTone } | null
+  /** 이 화를 쓰게 한 재료 — 직전 선택·대화·씨앗 */
+  basedOn: string[]
+  /** ai = 서버 생성, local = 기기 안 초안 */
+  source: 'ai' | 'local'
+  at: string
+}
+
+/** 이 기기에 쌓이는 장편 이어쓰기 상태 */
+export interface SerialState {
+  novelId: string
+  /** 정적 아크가 끝난 화 번호 (예: 24). 이어쓰기는 이 다음부터 */
+  baseChapters: number
+  chapters: SerialChapter[]
+  updatedAt: string
 }
 
 /** 이 기기에 저장되는 플레이 진행 */

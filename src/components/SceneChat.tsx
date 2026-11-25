@@ -18,9 +18,9 @@ import {
   requestChat,
   saveSceneMessages,
   sceneOfflineReply,
-  suggestReplies,
 } from '../lib/chat'
 import type { ChatFailure } from '../lib/chat'
+import { presentCast } from '../lib/cast'
 import { imageUrl } from '../data/art'
 import { withAndParticle, withSubjectParticle } from '../lib/format'
 
@@ -28,11 +28,13 @@ interface Props {
   novel: Novel
   scene: PlayScene
   characters: Character[]
+  /** 이 화에 실제로 있는 인물 — 없으면 작품 데이터에서 계산합니다 */
+  present?: Character[]
   picks: PlayPick[]
   applied: AppliedLine[]
-  /** 이 장면의 말 걸기 지점 — 추천 대사와 행동 요약이 여기서 나옵니다. */
+  /** 이 화의 말 걸기 지점 — 힌트와 행동 요약이 여기서 나옵니다. */
   interaction: SceneInteraction
-  /** 말 걸기 지점에서 고른 추천 대사 — 입력창에 미리 채워 둡니다. */
+  /** 말 걸기 지점에서 고른 힌트 — 입력창에 미리 채워 둡니다. */
   initialText?: string
   /** 소설에 넣을 대사들 — 한 번에 여러 줄(티키타카)이 들어올 수 있습니다. */
   onApply: (
@@ -47,14 +49,16 @@ interface Props {
 }
 
 /**
- * 💬 장면 중간 캐릭터 톡 + 「이 대사 소설에 적용하기」
- * - 말을 걸면 그 행동과 첫 대사가 곧바로 소설 본문(말 걸기 지점)에 들어갑니다.
- * - 지금 읽고 있는 장면·내 선택을 기억하고 답합니다. (/api/chat, 실패 시 기기 안 응답)
+ * 💬 이 화의 인물과 직접 대화 + 「이 대사 소설에 적용하기」
+ * — 독자가 타자로 직접 말을 겁니다. 추천 멘트는 그 화의 본문 대사에서만 만든 '힌트'입니다.
+ * — 대화 상대는 이 화에 실제로 서 있는 인물로만 한정합니다(없는 사람은 목록에 없습니다).
+ * — 지금 읽고 있는 화·내 선택·이 화에 넣은 대사를 기억하고 답합니다. (/api/chat, 실패 시 기기 안 응답)
  */
 export function SceneChat({
   novel,
   scene,
   characters,
+  present,
   picks,
   applied,
   interaction,
@@ -63,8 +67,13 @@ export function SceneChat({
   onClose,
 }: Props) {
   const { notify } = useStore()
-  const cast = characters.length > 0 ? characters : []
-  const [activeId, setActiveId] = useState<string>(scene.speakerId ?? cast[0]?.id ?? '')
+  const cast = useMemo(() => {
+    const listed = present && present.length > 0 ? present : presentCast(novel, scene)
+    if (listed.length > 0) return listed
+    return characters.filter((item) => item.id === scene.speakerId).slice(0, 1)
+  }, [characters, novel, present, scene])
+
+  const [activeId, setActiveId] = useState<string>(cast[0]?.id ?? '')
   const character = cast.find((item) => item.id === activeId) ?? cast[0]
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -72,8 +81,13 @@ export function SceneChat({
   const [sending, setSending] = useState(false)
   const [failure, setFailure] = useState<ChatFailure | null>(null)
   const [retryText, setRetryText] = useState<string | null>(null)
+  const [hintsOpen, setHintsOpen] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setActiveId(cast[0]?.id ?? '')
+  }, [cast])
 
   useEffect(() => {
     if (!character) return
@@ -92,15 +106,6 @@ export function SceneChat({
   const affinity = useMemo(
     () => affinityOf({ messages, appliedCount: applied.length, picks: picks.length }),
     [applied.length, messages, picks.length],
-  )
-
-  const lastPickLabel = picks.length > 0 ? picks[picks.length - 1].label : null
-  const extraSuggestions = useMemo(
-    () =>
-      messages.length === 0
-        ? []
-        : suggestReplies({ character, messages, lastPickLabel, scenePlace: scene.place }),
-    [character, lastPickLabel, messages, scene.place],
   )
 
   useEffect(() => {
@@ -122,7 +127,6 @@ export function SceneChat({
         notify('이미 소설에 들어간 대사예요')
         return
       }
-      // 티키타카는 내 대사와 캐릭터 대사를 한 번에 넘깁니다. 두 줄 모두 저장되어야 합니다.
       onApply(
         fresh.map((item) => ({
           text: item.text,
@@ -142,7 +146,6 @@ export function SceneChat({
       const value = text.trim()
       if (!value || sending) return
 
-      // 실패 후 「다시 시도」는 내 메시지를 또 쌓거나 소설에 다시 넣지 않고, 답장만 다시 요청합니다.
       const lastIsUser = messages[messages.length - 1]?.role === 'user'
       const history = retry && lastIsUser ? messages.slice(0, -1) : messages
       const firstTurn = !retry && history.length === 0
@@ -182,6 +185,7 @@ export function SceneChat({
           scene,
           picks,
           applied,
+          present: cast.map((item) => item.name),
           message: value,
           history,
         })
@@ -218,22 +222,28 @@ export function SceneChat({
         setSending(false)
       }
     },
-    [applied, character, interaction.action, messages, novel, notify, onApply, picks, scene, sending],
+    [applied, cast, character, interaction.action, messages, novel, notify, onApply, picks, scene, sending],
   )
 
   if (!character) return null
 
   const avatar = imageUrl(character.image)
   const lastSource = [...messages].reverse().find((message) => message.role === 'character')?.source
+  const hints = interaction.prompts.slice(0, 3)
 
   return (
     <>
       <div className="scene-chat-backdrop" onClick={onClose} aria-hidden />
-      <aside className="scene-chat" role="dialog" aria-modal="true" aria-label={`${withAndParticle(character.name)} 이 장면 대화`}>
+      <aside
+        className="scene-chat"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${withAndParticle(character.name)} 이 화 대화`}
+      >
         <header className="scene-chat-head">
           <div className="min-w-0 flex-1">
             <p className="scene-chat-eyebrow">
-              {scene.no}장 · {scene.title}
+              {scene.no}화 · {scene.title}
             </p>
             <p className="scene-chat-title">
               {character.name}
@@ -261,30 +271,33 @@ export function SceneChat({
           <span className="chat-mood-chip">{affinity.mood}</span>
         </div>
 
-        <div className="scene-chat-cast" role="tablist" aria-label="대화할 인물">
-          {cast.map((item) => {
-            const face = imageUrl(item.image)
-            return (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={item.id === character.id}
-                className="scene-chat-chip"
-                data-active={item.id === character.id}
-                onClick={() => setActiveId(item.id)}
-              >
-                <span className="scene-chat-chip-face">
-                  {face ? <img src={face} alt="" /> : <span aria-hidden>{item.name.slice(0, 1)}</span>}
-                </span>
-                <span className="min-w-0">
-                  <span className="scene-chat-chip-name">{item.name}</span>
-                  <span className="scene-chat-chip-role">{item.badge ?? item.tag}</span>
-                </span>
-              </button>
-            )
-          })}
-        </div>
+        {cast.length > 1 && (
+          <div className="scene-chat-cast" role="tablist" aria-label="이 화에 있는 인물">
+            <span className="scene-chat-cast-label">이 화에 있는 사람</span>
+            {cast.map((item) => {
+              const face = imageUrl(item.image)
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={item.id === character.id}
+                  className="scene-chat-chip"
+                  data-active={item.id === character.id}
+                  onClick={() => setActiveId(item.id)}
+                >
+                  <span className="scene-chat-chip-face">
+                    {face ? <img src={face} alt="" /> : <span aria-hidden>{item.name.slice(0, 1)}</span>}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="scene-chat-chip-name">{item.name}</span>
+                    <span className="scene-chat-chip-role">{item.badge ?? item.tag}</span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
 
         <div className="scene-chat-thread" ref={listRef}>
           {messages.length === 0 && (
@@ -293,11 +306,11 @@ export function SceneChat({
                 {avatar ? <img src={avatar} alt="" /> : <span aria-hidden>{character.name.slice(0, 1)}</span>}
               </span>
               <p className="scene-chat-empty-title">
-                {withSubjectParticle(character.name)} 지금 이 장면에 서 있습니다
+                {withSubjectParticle(character.name)} 지금 이 화에 서 있습니다
               </p>
               <p className="scene-chat-empty-body">
-                {interaction.cue} 여기까지의 내 선택을 기억하고 {character.name}의 말투로 답합니다. 아래
-                추천 대사 중 하나를 눌러도 좋아요.
+                {interaction.cue} 하고 싶은 말을 직접 쓰세요. 지금까지의 선택을 기억하고 {character.name}의 말투로
+                답합니다.
               </p>
             </div>
           )}
@@ -370,32 +383,6 @@ export function SceneChat({
           </div>
         )}
 
-        {extraSuggestions.length > 0 && (
-          <div className="chat-suggest-active" aria-label="이어서 건넬 말">
-            {extraSuggestions.map((suggestion) => (
-              <button key={suggestion} type="button" disabled={sending} onClick={() => void send(suggestion)}>
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="scene-chat-suggest" aria-label="추천 대사">
-          <span className="scene-chat-suggest-label">이 장면에서 건넬 말</span>
-          <div className="scene-chat-suggest-row">
-            {interaction.prompts.map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                disabled={sending}
-                onClick={() => void send(suggestion)}
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <form
           className="scene-chat-input"
           onSubmit={(event) => {
@@ -407,7 +394,7 @@ export function SceneChat({
             ref={inputRef}
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder={`${character.name}에게 말 걸기…`}
+            placeholder={`${character.name}에게 하고 싶은 말을 직접 쓰세요…`}
             aria-label="메시지 입력"
             maxLength={400}
           />
@@ -415,6 +402,31 @@ export function SceneChat({
             보내기
           </button>
         </form>
+
+        {hints.length > 0 && (
+          <details
+            className="scene-chat-hints"
+            open={hintsOpen}
+            onToggle={(event) => setHintsOpen((event.target as HTMLDetailsElement).open)}
+          >
+            <summary>이 화에서만 쓰는 힌트 {hints.length}개 — 눌러도 되고, 그냥 직접 써도 됩니다</summary>
+            <div className="scene-chat-hint-row">
+              {hints.map((hint) => (
+                <button
+                  key={hint}
+                  type="button"
+                  disabled={sending}
+                  onClick={() => {
+                    setInput(hint)
+                    inputRef.current?.focus({ preventScroll: true })
+                  }}
+                >
+                  {hint}
+                </button>
+              ))}
+            </div>
+          </details>
+        )}
 
         <p className="scene-chat-foot">
           {lastSource === 'offline'

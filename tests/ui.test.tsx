@@ -81,17 +81,18 @@ function renderApp(initialPath: string) {
 async function pick(sceneIndex: number, choiceIndex: number) {
   const cards = await waitFor(() => {
     const found = document.querySelectorAll(`#play-scene-${sceneIndex} .choice-panel .choice-card`)
-    assert.ok(found.length >= 3 && found.length <= 4, `${sceneIndex}장 선택지 ${found.length}`)
+    assert.ok(found.length >= 2 && found.length <= 4, `${sceneIndex}화 선택지 ${found.length}`)
     return found
   })
   await settle()
-  fireEvent.click(cards[choiceIndex] as HTMLElement)
+  fireEvent.click(cards[choiceIndex % cards.length] as HTMLElement)
   await settle()
 }
 
 describe('화면 — 말 걸기 지점에서 소설로', () => {
   it('말을 걸면 행동 요약과 첫 대사가 본문·저장소·완성본에 들어간다', async () => {
     window.localStorage.clear()
+    const flow = ALL_FLOWS.find((item) => item.novelId === 'nv-secretary')!
     renderApp('/novel/nv-secretary/play')
 
     // 1장의 말 걸기 지점이 보인다
@@ -101,7 +102,7 @@ describe('화면 — 말 걸기 지점에서 소설로', () => {
       return found as HTMLElement
     })
     const prompts = gate.querySelectorAll('.speak-gate-prompts button')
-    assert.equal(prompts.length, 4, '추천 대사 4개')
+    assert.ok(prompts.length >= 2, '이 화 전용 힌트')
 
     // 추천 대사 하나를 고르면 입력창에 그대로 담긴다
     fireEvent.click(prompts[0] as HTMLElement)
@@ -162,7 +163,7 @@ describe('화면 — 말 걸기 지점에서 소설로', () => {
     })
 
     // 나머지 선택을 마치고 완성본에서도 대사가 이어진다
-    for (let index = 0; index < 6; index += 1) {
+    for (let index = 0; index < flow.scenes.length; index += 1) {
       await pick(index, 0)
     }
     const finaleLink = document.querySelector('#play-finish a.btn-primary') as HTMLAnchorElement | null
@@ -183,15 +184,15 @@ describe('화면 — 말 걸기 지점에서 소설로', () => {
 
 describe('화면 — 마지막 선택과 엔딩', () => {
   for (const flow of ALL_FLOWS) {
-    const last = flow.scenes[5]
+    const last = flow.scenes[flow.scenes.length - 1]
     const endingB = flow.endings.find((ending) => ending.tone === 'B')!
     const bIndex = last.choices.findIndex((choice) => choice.tone === 'B')
     it(`${flow.novelId} · 마지막에 B를 고르면 「${endingB.name}」`, async () => {
       window.localStorage.clear()
       renderApp(`/novel/${flow.novelId}/play`)
 
-      for (let index = 0; index < 6; index += 1) {
-        await pick(index, index === 5 ? bIndex : index % last.choices.length)
+      for (let index = 0; index < flow.scenes.length; index += 1) {
+        await pick(index, index === flow.scenes.length - 1 ? bIndex : index % last.choices.length)
       }
 
       await waitFor(() => {
@@ -206,15 +207,15 @@ describe('화면 — 마지막 선택과 엔딩', () => {
 
   for (const novelId of ['nv-cafe', 'nv-academy', 'nv-parcel', 'nv-office', 'nv-secretary']) {
     const flow = ALL_FLOWS.find((item) => item.novelId === novelId)!
-    const last = flow.scenes[5]
+    const last = flow.scenes[flow.scenes.length - 1]
     const endingA = flow.endings.find((ending) => ending.tone === 'A')!
     const aIndex = last.choices.findIndex((choice) => choice.tone === 'A')
     it(`${novelId} · 마지막에 A를 고르면 「${endingA.name}」`, async () => {
       window.localStorage.clear()
       renderApp(`/novel/${novelId}/play`)
 
-      for (let index = 0; index < 6; index += 1) {
-        await pick(index, index === 5 ? aIndex : (index + 1) % last.choices.length)
+      for (let index = 0; index < flow.scenes.length; index += 1) {
+        await pick(index, index === flow.scenes.length - 1 ? aIndex : (index + 1) % last.choices.length)
       }
 
       await waitFor(() => {
@@ -226,4 +227,24 @@ describe('화면 — 마지막 선택과 엔딩', () => {
       cleanup()
     })
   }
+})
+
+describe('화면 — 6화 작품도 7화부터 이어쓴다', () => {
+  it('완결 화면 아래에 장편 이어쓰기와 7화 버튼이 있다', async () => {
+    window.localStorage.clear()
+    const flow = ALL_FLOWS.find((item) => item.novelId === 'nv-cafe')!
+    renderApp('/novel/nv-cafe/play')
+    for (let index = 0; index < flow.scenes.length; index += 1) {
+      await pick(index, 0)
+    }
+    await waitFor(() => {
+      const section = document.querySelector('.serial-writer')
+      assert.ok(section, '이어쓰기 섹션')
+      const text = section?.textContent ?? ''
+      assert.ok(text.includes('장편 이어쓰기'), text.slice(0, 40))
+      assert.ok(text.includes('7화'), '다음 화 7화')
+      assert.ok(text.includes('/ 100화'), '100화 목표')
+    })
+    cleanup()
+  })
 })

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
+import { ALL_FLOWS } from '../src/data/flows'
 
 /**
  * 상용 리더기 · 서재 · 엔딩 도감.
@@ -79,7 +80,8 @@ test('엔딩을 모으면 엔딩 도감에 이름이 열린다', async ({ page }
   await page.goto('/#/novel/nv-ceo/play')
   await expect(page.locator('#play-scene-0 .choice-card').first()).toBeVisible()
 
-  for (let index = 0; index < 6; index += 1) {
+  const total = ALL_FLOWS.find((item) => item.novelId === 'nv-ceo')!.scenes.length
+  for (let index = 0; index < total; index += 1) {
     const cards = page.locator(`#play-scene-${index} .choice-panel .choice-card`)
     await cards.first().scrollIntoViewIfNeeded()
     await cards.first().click()

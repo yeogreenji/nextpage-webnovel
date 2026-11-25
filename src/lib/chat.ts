@@ -67,6 +67,8 @@ export function makeMessage(role: ChatMessage['role'], text: string, source?: Ch
 export interface ChatRequest {
   novel: { id: string; title: string; synopsis: string; genres: string[] }
   character: { name: string; role: string; tag: string; quote: string }
+  /** 이 자리에 실제로 있는 인물 이름 — 목록 밖 인물을 부르지 못하게 합니다 */
+  present?: string[]
   episodeContext: {
     current: { no: number; title: string; excerpt: string } | null
     choices: string[]
@@ -87,10 +89,11 @@ export function buildChatRequest(input: {
   episodes: Episode[]
   votes: VoteRecord[]
   currentEpisode: Episode | null
+  present?: string[]
   message: string
   history: ChatMessage[]
 }): ChatRequest {
-  const { novel, character, episodes, votes, currentEpisode, message, history } = input
+  const { novel, character, episodes, votes, currentEpisode, present, message, history } = input
   const choices = describeChoices(novel, episodes, votes)
 
   return {
@@ -106,6 +109,7 @@ export function buildChatRequest(input: {
       tag: character.tag,
       quote: character.quote,
     },
+    present,
     episodeContext: {
       current: currentEpisode
         ? {
@@ -169,10 +173,11 @@ export function buildSceneChatRequest(input: {
   scene: PlayScene
   picks: PlayPick[]
   applied: AppliedLine[]
+  present?: string[]
   message: string
   history: ChatMessage[]
 }): ChatRequest {
-  const { novel, character, scene, picks, applied, message, history } = input
+  const { novel, character, scene, picks, applied, present, message, history } = input
   const lastPick = picks[picks.length - 1]
   const choices = [
     ...picks.map((pick, index) => `${index + 1}장면에서 “${pick.label}”를 골랐다`),
@@ -195,6 +200,7 @@ export function buildSceneChatRequest(input: {
       tag: character.tag,
       quote: character.quote,
     },
+    present,
     episodeContext: {
       current: {
         no: scene.no,
@@ -379,58 +385,14 @@ export function affinityOf(input: {
   return { score, tier: tier.tier, color: tier.color, mood }
 }
 
-/* ───────────────────────── 추천 대사 3개 ───────────────────────── */
-
-const OPENERS: string[][] = [
-  ['지금 뭐 하고 계세요?', '조금 더 가까이, 이야기해 줄래요?', '오늘 하루는 어땠어요?'],
-  ['이 장면, 당신은 어떻게 보고 있어요?', '솔직히 말해도 돼요?', '제가 뭘 물으면 대답해 줄래요?'],
-  ['여기서 잠깐만, 같이 있어도 될까요?', '당신은 지금 무슨 생각을 해요?', '아까 그 말, 마음에 남았어요.'],
-]
-
-/** 문자 코드 합으로 작품·인물마다 다른 첫 대사를 고릅니다. */
-function pickOpeners(key: string): string[] {
-  let sum = 0
-  for (let index = 0; index < key.length; index += 1) sum += key.charCodeAt(index)
-  return OPENERS[sum % OPENERS.length]
-}
+/* ───────────────────────── 추천 대사 ───────────────────────── */
 
 /**
- * 지금 대화에 바로 쓸 수 있는 추천 대사 3개.
- * — 첫 대화 / 대화 중 / 선택을 마친 뒤에 따라 달라집니다.
- * — 화면에서 누르면 그대로 전송됩니다.
+ * 대화창의 힌트.
+ * — 예전에는 모든 작품·모든 장면에 같은 문장 3개를 복붙해 보여 주었습니다.
+ *   이제 추천 문장은 그 화의 본문 대사에서만 뽑습니다(interaction.prompts).
+ *   여기서는 '직접 타자로 말을 거는' 입력을 돕는 안내만 돌려줍니다.
  */
-export function suggestReplies(input: {
-  character: Character
-  messages: ChatMessage[]
-  lastPickLabel?: string | null
-  scenePlace?: string
-}): string[] {
-  const { character, messages } = input
-  const last = [...messages].reverse().find((message) => message.role === 'character')
-  const chips: string[] = []
-
-  if (!last) {
-    chips.push(...pickOpeners(character.id + character.name))
-  } else if (last.text.includes('?')) {
-    chips.push('그건, 제가 답해도 되는 질문인가요?')
-    chips.push('글쎄요. 지금은 잘 모르겠어요.')
-    chips.push('당신은 어떻게 생각해요?')
-  } else if (last.text.includes('…')) {
-    chips.push('말끝을 흐리지 말아 주세요.')
-    chips.push('기다릴게요. 천천히 말해도 돼요.')
-    chips.push('그 침묵, 무슨 뜻이에요?')
-  } else {
-    chips.push('그 말, 조금 더 듣고 싶어요.')
-    chips.push('지금 표정, 어떤지 궁금해요.')
-    chips.push('나도 같은 생각이에요.')
-  }
-
-  if (input.lastPickLabel) {
-    chips.push(`“${input.lastPickLabel}” — 그 선택은 후회하지 않아요.`)
-  } else if (input.scenePlace) {
-    chips.push(`${input.scenePlace.split('·').pop()?.trim() ?? '여기'}에서, 무슨 일이 있었어요?`)
-  }
-
-  const unique = Array.from(new Set(chips.map((chip) => chip.trim()).filter(Boolean)))
-  return unique.slice(0, 3)
+export function hintLineFor(character: Character): string {
+  return `${character.name}에게 지금 하고 싶은 말을 그대로 쓰세요. 이 화에 없는 사람의 이름은 부르지 않습니다.`
 }

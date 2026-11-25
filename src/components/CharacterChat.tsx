@@ -12,7 +12,6 @@ import {
   offlineReply,
   requestChat,
   saveMessages,
-  suggestReplies,
 } from '../lib/chat'
 import type { ChatFailure } from '../lib/chat'
 import { describeChoices } from '../lib/story'
@@ -26,6 +25,8 @@ interface Props {
   novel: Novel
   character: Character
   currentEpisode: Episode | null
+  /** 이 화에 실제로 나오는 인물 — 목록 밖 인물을 부르지 않게 프롬프트에 싣습니다 */
+  present?: Character[]
   /** 닫기 버튼 (오버레이 모드에서 사용) */
   onClose?: () => void
 }
@@ -36,7 +37,7 @@ interface Props {
  * - 정적 배포·AI 장애 시: 캐릭터별 성격이 살아 있는 상황 응답 (오프라인 폴백)
  * - 호감도·기분은 이 기기에서 대화량으로 계산합니다.
  */
-export function CharacterChat({ novel, character, currentEpisode, onClose }: Props) {
+export function CharacterChat({ novel, character, currentEpisode, present, onClose }: Props) {
   const { episodes, votes, notify, wallet, hasPass, unlockCharacterChat, openPricing } = useStore()
   const [messages, setMessages] = useState<ChatMessage[]>(() =>
     loadMessages(novel.id, character.id),
@@ -58,20 +59,9 @@ export function CharacterChat({ novel, character, currentEpisode, onClose }: Pro
     if (node) node.scrollTop = node.scrollHeight
   }, [messages, sending])
 
-  const lastPickLabel = useMemo(() => {
-    const session = allSessions()[novel.id]
-    const picks = session?.picks ?? []
-    return picks.length > 0 ? picks[picks.length - 1].label : null
-  }, [novel.id, messages.length])
-
   const affinity = useMemo(
     () => affinityOf({ messages, appliedCount: 0, picks: allSessions()[novel.id]?.picks.length ?? 0 }),
     [messages, novel.id],
-  )
-
-  const suggestions = useMemo(
-    () => suggestReplies({ character, messages, lastPickLabel }),
-    [character, messages, lastPickLabel],
   )
 
   const send = useCallback(
@@ -97,6 +87,7 @@ export function CharacterChat({ novel, character, currentEpisode, onClose }: Pro
           episodes,
           votes,
           currentEpisode,
+          present: (present ?? novel.characters ?? []).map((item) => item.name),
           message: value,
           history,
         })
@@ -127,7 +118,7 @@ export function CharacterChat({ novel, character, currentEpisode, onClose }: Pro
         setSending(false)
       }
     },
-    [character, currentEpisode, episodes, messages, novel, notify, sending, votes],
+    [character, currentEpisode, episodes, messages, novel, notify, present, sending, votes],
   )
 
   const avatar = imageUrl(character.image)
@@ -229,29 +220,6 @@ export function CharacterChat({ novel, character, currentEpisode, onClose }: Pro
 
       {gate.allowed ? (
         <>
-          {messages.length === 0 ? (
-            <div className="chat-suggest">
-              {suggestions.map((suggestion) => (
-                <button key={suggestion} type="button" onClick={() => void send(suggestion)}>
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="chat-suggest-active" aria-label="이어서 건넬 말">
-              {suggestions.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  disabled={sending}
-                  onClick={() => void send(suggestion)}
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          )}
-
           <form
             className="chat-input"
             onSubmit={(event) => {
@@ -262,9 +230,10 @@ export function CharacterChat({ novel, character, currentEpisode, onClose }: Pro
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder={`${character.name}에게 말 걸기…`}
+              placeholder={`${character.name}에게 하고 싶은 말을 직접 쓰세요…`}
               aria-label="메시지 입력"
               maxLength={500}
+              autoFocus
             />
             <button type="submit" disabled={sending || input.trim().length === 0}>
               보내기

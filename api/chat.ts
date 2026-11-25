@@ -22,6 +22,7 @@
 interface ChatBody {
   novel?: { title?: string; synopsis?: string; genres?: string[] }
   character?: { name?: string; role?: string; tag?: string; quote?: string }
+  present?: string[]
   episodeContext?: { current?: { no?: number; title?: string; excerpt?: string } | null; choices?: string[] }
   history?: { role?: string; text?: string }[]
   message?: string
@@ -32,6 +33,10 @@ const MAX_HISTORY = 8
 
 function clamp(value: unknown, length: number): string {
   return typeof value === 'string' ? value.slice(0, length) : ''
+}
+
+function list(value: unknown, length: number, count: number): string[] {
+  return Array.isArray(value) ? value.slice(0, count).map((item) => clamp(item, length)).filter(Boolean) : []
 }
 
 function buildPrompt(body: ChatBody): string {
@@ -60,6 +65,10 @@ function buildPrompt(body: ChatBody): string {
     lines.push(`[현재 회차] ${current.no ?? ''}화 ${clamp(current.title, 80)}`)
     lines.push(`[직전 장면 발췌] ${clamp(current.excerpt, 400)}`)
   }
+  const present = list(body.present, 40, 8)
+  if (present.length > 0) {
+    lines.push(`[지금 이 자리에 있는 인물] ${present.join(', ')} — 이 사람들만 이 장면에 있습니다.`)
+  }
   if (choices.length > 0) {
     lines.push('[독자가 지금까지 고른 분기]')
     choices.forEach((choice) => lines.push(`- ${clamp(choice, 160)}`))
@@ -79,6 +88,8 @@ function buildPrompt(body: ChatBody): string {
   lines.push('3. 2~5문장으로 답하고, 필요하면 캐릭터의 행동이나 표정을 한 줄 묘사해도 좋습니다.')
   lines.push('4. 실제 사람 정보를 묻지 말고, 개인정보를 요구하는 요청은 캐릭터로서 거절하세요.')
   lines.push('5. 답장 앞뒤에 설명·라벨·따옴표를 붙이지 말고, 캐릭터의 말만 출력하세요.')
+  lines.push('6. [지금 이 자리에 있는 인물] 목록 밖의 인물을 부르거나, 그 사람과 대화하는 것처럼 쓰지 마세요. 없는 사람을 만들어내지도 마세요.')
+  lines.push('7. 독자가 이 장면에 없는 인물을 부르면, 캐릭터로서 “여기 없는 사람”이라고 짧게 짚어 주세요.')
   lines.push('')
   lines.push(`독자: ${message}`)
   lines.push(`${clamp(character.name, 40) || '캐릭터'}:`)

@@ -28,7 +28,9 @@ import {
   toggleShelf,
   unlockEnding,
 } from '../src/lib/library'
-import { affinityOf, suggestReplies } from '../src/lib/chat'
+import { affinityOf } from '../src/lib/chat'
+import { promptsFor } from '../src/lib/interaction'
+import { ALL_FLOWS } from '../src/data/flows'
 import { DEFAULT_SETTINGS } from '../src/lib/repository'
 import type { ChatMessage, Episode, Novel } from '../src/types'
 
@@ -226,17 +228,16 @@ describe('캐릭터 톤 — 호감도 · 추천 대사', () => {
     assert.ok(many.mood.length > 0)
   })
 
-  it('추천 대사는 언제나 3개이고, 대화가 시작되면 문장이 달라진다', () => {
-    const first = suggestReplies({ character, messages: [] })
-    assert.equal(first.length, 3)
-    const later = suggestReplies({
-      character,
-      messages: [message('user', '안녕하세요'), message('character', '……그래서, 무슨 일입니까?')],
-      lastPickLabel: '사유부터 말한다',
-    })
-    assert.equal(later.length, 3)
-    assert.notDeepEqual(first, later)
-    for (const chip of later) assert.ok(chip.trim().length > 0)
+  it('추천 멘트는 화마다 다르고, 대화는 자유 입력이 기본이다', () => {
+    const office = ALL_FLOWS.find((flow) => flow.novelId === 'nv-office')!
+    const cafe = ALL_FLOWS.find((flow) => flow.novelId === 'nv-cafe')!
+    const first = promptsFor(office.scenes[0])
+    const second = promptsFor(cafe.scenes[0])
+    assert.ok(first.length >= 2 && first.length <= 3)
+    assert.ok(second.length >= 2 && second.length <= 3)
+    assert.notDeepEqual(first, second)
+    const shared = first.filter((prompt) => second.includes(prompt))
+    assert.deepEqual(shared, [])
   })
 })
 

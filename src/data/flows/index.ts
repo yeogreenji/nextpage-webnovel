@@ -8,6 +8,7 @@ import { cafeFlow, memoryFlow, murimFlow } from './drama'
 import { lodgeFlow, occultFlow, parcelFlow } from './thriller'
 import { WAVE_FLOWS } from '../stories/wave'
 import { SCENE_ART } from '../art-wave'
+import { applyLongform } from './longform'
 
 /**
  * 인터랙티브 소설 흐름.
@@ -36,20 +37,28 @@ const BASE_FLOWS: StoryFlow[] = [
 
 /** 장면 일러스트가 비어 있으면 장면 id 로 자산을 붙입니다(신작·세 번째 갈래 포함). */
 function withSceneArt(flow: StoryFlow): StoryFlow {
+  const assigned = flow.scenes.map((scene) => {
+    if (scene.image) return scene
+    const image = SCENE_ART[scene.id]
+    return image ? { ...scene, image } : scene
+  })
+  // 장편 아크의 새 화는 이 작품의 기존 장면 컷을 돌려 씁니다(같은 작품 안에서만).
+  const pool = assigned.map((scene) => scene.image).filter((image): image is string => Boolean(image))
+  if (pool.length === 0) return { ...flow, scenes: assigned }
   return {
     ...flow,
-    scenes: flow.scenes.map((scene) => {
-      if (scene.image) return scene
-      const image = SCENE_ART[scene.id]
-      return image ? { ...scene, image } : scene
-    }),
+    scenes: assigned.map((scene, index) =>
+      scene.image ? scene : { ...scene, image: pool[index % pool.length] },
+    ),
   }
 }
 
 export const ALL_FLOWS: StoryFlow[] = [
   ...BASE_FLOWS.map(applyPatches).map(applyExtras),
   ...WAVE_FLOWS,
-].map(withSceneArt)
+]
+  .map(applyLongform)
+  .map(withSceneArt)
 
 const FLOW_MAP: Record<string, StoryFlow> = Object.fromEntries(
   ALL_FLOWS.map((flow) => [flow.novelId, flow]),
